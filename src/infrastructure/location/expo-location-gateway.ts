@@ -14,10 +14,12 @@ export const expoLocationGateway: LocationGateway = {
         Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
         new Promise<never>((_, reject) => { timeout = setTimeout(() => reject(new Error('Location timeout')), 20_000); }),
       ]);
-      return { status: 'ready', location: {
-        coords: { latitude: location.coords.latitude, longitude: location.coords.longitude, accuracy: location.coords.accuracy },
-        timestamp: location.timestamp,
-      } };
+      return {
+        status: 'ready', location: {
+          coords: { latitude: location.coords.latitude, longitude: location.coords.longitude, accuracy: location.coords.accuracy },
+          timestamp: location.timestamp,
+        }
+      };
     } finally { if (timeout) clearTimeout(timeout); }
   },
   async openSettings() {

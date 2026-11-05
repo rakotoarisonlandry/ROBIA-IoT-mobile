@@ -1,18 +1,7 @@
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-const Module = require('node:module');
-const ts = require('typescript');
-
-const filename = path.resolve(__dirname, '../src/utils/google-maps.ts');
-const compiled = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
-  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
-}).outputText;
-const loaded = new Module(filename, module);
-loaded.filename = filename;
-loaded.paths = module.paths;
-loaded._compile(compiled, filename);
-const { nearbyShopsUrl, directionsUrl, placeUrl, isValidCoordinates } = loaded.exports;
+require('./test-support/register-typescript.cjs');
+const { nearbyShopsUrl, directionsUrl, placeUrl } = require('../src/infrastructure/maps/google-maps-urls.ts');
+const { isValidCoordinates } = require('../src/domain/location/entities.ts');
 
 const gps = { latitude: -18.8792, longitude: 47.5079 };
 const shop = { name: 'Orange Analakely', address: 'Antananarivo, Madagascar', placeId: 'google-place-123' };

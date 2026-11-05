@@ -1,1 +1,1 @@
-export { default } from '@/components/booking-app';
+export { default } from '@/presentation/booking/screens/booking-screen';

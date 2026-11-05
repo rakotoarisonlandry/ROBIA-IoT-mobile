@@ -10,7 +10,7 @@ export function validateCustomer(customer: Customer): void {
 }
 
 export function appointmentDate(day: Date, time: string, now: Date): Date {
-  if (!Number.isFinite(day.getTime())) throw new BookingError('invalid-date');
+  if (!(day instanceof Date) || !Number.isFinite(day.getTime())) throw new BookingError('invalid-date');
   // Slots start every 30 minutes, including 08:00 and 16:00.
   if (!/^(?:0[89]|1[0-5]):(?:00|30)$|^16:00$/.test(time)) {
     throw new BookingError('invalid-time');
