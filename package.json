@@ -4,6 +4,7 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@expo/ui": "~58.0.27",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "@types/qrcode": "^1.5.6",
     "expo": "~58.0.23",
     "expo-constants": "~58.0.15",
@@ -26,6 +27,7 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-native": "0.88.1",
+    "react-native-copilot": "^3.3.3",
     "react-native-gesture-handler": "~3.3.0",
     "react-native-maps": "1.29.11",
     "react-native-reanimated": "4.7.1",

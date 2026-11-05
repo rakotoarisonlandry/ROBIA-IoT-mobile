@@ -1,3 +1,6 @@
+import { useRef, useState } from 'react';
+import { GuideSpot } from '../../onboarding/guide-spot';
+import { GuideEntry } from '../../onboarding/guide-entry';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Image, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +20,8 @@ const navigation = [
   { label: "Mes tickets", icon: "ticket" },
 ];
 export default function BookingScreen() {
+  const scrollRef = useRef<ScrollView>(null);
+  const [layoutReady, setLayoutReady] = useState(false);
   const { width } = useWindowDimensions();
   const desktop = width >= 1050;
   const wide = width >= 730;
@@ -24,7 +29,7 @@ export default function BookingScreen() {
   const tab = navigation.some(n => n.label === view) ? view! : 'Accueil';
   const setTab = (next: string) => router.setParams({ view: next });
   const model = useBookingWorkflow();
-  const { setHelp, open, name, services, shops, tickets, setTicket, setStep, setError, setModal, help } = model;
+  const { setHelp, open, name, services, shops, tickets, setTicket, setStep, setError, setModal, help, modal } = model;
   return ((
     <SafeAreaView style={s.root} edges={["top", "left", "right"]}>
       <View style={s.shell}>
@@ -126,6 +131,8 @@ export default function BookingScreen() {
             </View>
           </View>
           <ScrollView
+            ref={scrollRef}
+            onLayout={() => setLayoutReady(true)}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={[s.content, !wide && { padding: 20 }]}
           >
@@ -163,6 +170,7 @@ export default function BookingScreen() {
                 </View>
               )}
             </View>
+<GuideEntry scope={tab === "Accueil" ? "home" : tab === "Les boutiques" ? "shops" : null} scrollRef={scrollRef} ready={layoutReady && !modal && !help} />
             {tab === "Accueil" && (
               <>
                 <View style={[s.hero, !wide && { padding: 26 }]}>
@@ -181,13 +189,13 @@ export default function BookingScreen() {
                       {wide ? "\n" : " "}et rendez-vous en boutique l’esprit
                       tranquille.
                     </Text>
-                    <Pressable onPress={() => open()} style={s.heroButton}>
+                    <GuideSpot name="home-reserve" order={1} text="Commencez ici pour choisir votre service, votre boutique et un horaire. Votre ticket QR et PDF sera disponible après confirmation." style={{ alignSelf: 'flex-start' }}><Pressable onPress={() => open()} style={s.heroButton}>
                       <Icon name="calendar" size={18} />
                       <Text style={s.heroButtonText}>
                         Prendre un rendez-vous
                       </Text>
                       <Icon name="arrow" size={18} />
-                    </Pressable>
+                    </Pressable></GuideSpot>
                     <View style={s.heroFoot}>
                       <Icon name="check" size={13} color="white" />
                       <Text style={s.heroFootText}>Simple et gratuit</Text>
@@ -256,7 +264,7 @@ export default function BookingScreen() {
                   </View>
                   {wide && <Text style={s.mutedTag}>NOS SERVICES</Text>}
                 </View>
-                <View style={[s.serviceGrid, !wide && { flexWrap: "wrap" }]}>
+                <GuideSpot name="home-services" order={2} text="Sélectionnez le service souhaité : Orange Money, récupération de numéro, abonnement ou achat." style={[s.serviceGrid, !wide && { flexWrap: "wrap" }]}>
                   {services.map((v, i) => (
                     <Pressable
                       key={v.name}
@@ -281,13 +289,13 @@ export default function BookingScreen() {
                       </View>
                     </Pressable>
                   ))}
-                </View>
+                </GuideSpot>
               </>
             )}
             {tab === "Les boutiques" && <ShopLocator shops={shops} onBook={(index) => open(undefined, index)} />}
             {tab === "Accueil" && (
               <>
-                <View style={s.sectionHead}>
+                <GuideSpot name="home-shops" order={3} text="Ouvrez les boutiques pour vous localiser, consulter la carte et préparer votre itinéraire dans Robia." style={s.sectionHead}>
                   <View>
                     <Text style={s.sectionTitle}>
                       Trouvez votre boutique Orange
@@ -307,7 +315,7 @@ export default function BookingScreen() {
                       <Icon name="arrow" color={orange} size={16} />
                     </Pressable>
                   )}
-                </View>
+                </GuideSpot>
                 <View
                   style={[s.shopGrid, !wide && { flexDirection: "column" }]}
                 >
@@ -428,13 +436,7 @@ export default function BookingScreen() {
             )}
             {tab === "Accueil" && (
               <View
-                style={[
-                  s.howBox,
-                  !wide && {
-                    flexDirection: "column",
-                    alignItems: "flex-start",
-                  },
-                ]}
+                style=
               >
                 <View style={s.howHeading}>
                   <View style={s.howIcon}>

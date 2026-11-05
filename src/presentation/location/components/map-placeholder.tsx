@@ -19,11 +19,11 @@ export default function MapPlaceholder() {
       </View>
       <Text style={s.title}>Les bonnes adresses, autour de vous.</Text>
       <Text style={s.description}>
-        Explorez les boutiques Orange sur Google Maps et choisissez votre
-        itinéraire.
+        La carte intégrée n’est pas encore disponible. Vous pourrez y retrouver
+        les boutiques et votre trajet sans quitter Robia.
       </Text>
       <Text style={s.caption}>
-        La carte et les résultats s’ouvrent dans Google Maps.
+        La localisation et les réservations restent accessibles.
       </Text>
     </View>
   );

@@ -28,9 +28,10 @@ export function useCurrentLocation() {
       if (!current.mounted || id !== current.requestId) return;
       if (result.status === 'ready') {
         setState({ status: 'ready', location: result.location, message: '', canAskAgain: true });
+        return result.location;
       } else {
         const messages = {
-          denied: 'La localisation est refusée. Vous pouvez rechercher une ville ou continuer dans Google Maps.',
+          denied: 'La localisation est refusée. Vous pouvez rechercher une ville ; autorisez votre position pour calculer un trajet.',
           disabled: 'Activez la localisation de votre appareil, puis réessayez.',
           error: 'Position indisponible. Réessayez à l’extérieur ou recherchez une ville.',
         };
