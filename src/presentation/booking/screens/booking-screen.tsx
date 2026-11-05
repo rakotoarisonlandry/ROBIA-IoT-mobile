@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { GuideSpot } from '../../onboarding/guide-spot';
+import { GuideSpot, GuideViewport, type GuideScrollHandle } from '../../onboarding/guide-spot';
 import { GuideEntry } from '../../onboarding/guide-entry';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Image, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
@@ -20,7 +20,7 @@ const navigation = [
   { label: "Mes tickets", icon: "ticket" },
 ];
 export default function BookingScreen() {
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<GuideScrollHandle>(null);
   const [layoutReady, setLayoutReady] = useState(false);
   const { width } = useWindowDimensions();
   const desktop = width >= 1050;
@@ -31,7 +31,7 @@ export default function BookingScreen() {
   const model = useBookingWorkflow();
   const { setHelp, open, name, services, shops, tickets, setTicket, setStep, setError, setModal, help, modal } = model;
   return ((
-    <SafeAreaView style={s.root} edges={["top", "left", "right"]}>
+    <GuideViewport scrollRef={scrollRef}><SafeAreaView style={s.root} edges={["top", "left", "right"]}>
       <View style={s.shell}>
         {desktop && (
           <View style={s.sidebar}>
@@ -434,45 +434,6 @@ export default function BookingScreen() {
                 )}
               </View>
             )}
-            {tab === "Accueil" && (
-              <View
-                style=
-              >
-                <View style={s.howHeading}>
-                  <View style={s.howIcon}>
-                    <Icon name="spark" color={orange} />
-                  </View>
-                  <View>
-                    <Text style={s.howTitle}>Votre visite en 3 étapes</Text>
-                    <Text style={s.howSub}>On simplifie votre quotidien.</Text>
-                  </View>
-                </View>
-                {[
-                  {
-                    title: "Choisissez votre service",
-                    sub: "Et la boutique qui vous convient.",
-                  },
-                  {
-                    title: "Réservez votre créneau",
-                    sub: "À l’heure qui vous arrange.",
-                  },
-                  {
-                    title: "Présentez votre QR code",
-                    sub: "Votre conseiller vous attend.",
-                  },
-                ].map((v, i) => (
-                  <View key={v.title} style={s.howStep}>
-                    <View style={s.stepNumber}>
-                      <Text style={s.stepNumberText}>{i + 1}</Text>
-                    </View>
-                    <View>
-                      <Text style={s.howStepTitle}>{v.title}</Text>
-                      <Text style={s.howSub}>{v.sub}</Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            )}
             <View style={s.footer}>
               <Text style={s.footerText}>
                 © {new Date().getFullYear()} Robia. Du temps pour l’essentiel.
@@ -512,6 +473,6 @@ export default function BookingScreen() {
       </View>
       <BookingDialog model={model} wide={wide} />
       <HelpDialog visible={help} onClose={() => setHelp(false)} />
-    </SafeAreaView>
+    </SafeAreaView></GuideViewport>
   ));
 }

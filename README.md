@@ -34,6 +34,6 @@ les frontieres entre les couches, sans lancer le runtime Expo.
 
 Le profil EAS `preview` produit un APK autonome. Voir [le guide APK](docs/android-apk.md).
 
-La recherche et les itineraires Google Maps fonctionnent sans cle API dans Google Maps.
-La carte Google integree au nouvel APK requiert une cle SDK configuree.
+La carte, la recherche de boutiques et les itineraires restent dans Robia.
+Leur activation requiert les cles Google Maps et le serveur de recherche configure.
 Voir [le guide Google Maps](docs/google-maps.md).

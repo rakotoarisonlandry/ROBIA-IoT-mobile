@@ -1,65 +1,94 @@
-# Boutiques et itinéraires Google Maps
+# Carte Google Maps dans Robia
 
-## Fonctionnement sans clé
+La carte, les résultats et l’aperçu du trajet restent dans l’application.
+Aucun bouton de recherche ou d’itinéraire n’ouvre Google Maps à l’extérieur.
+Cela nécessite une connexion internet et une configuration Google Maps active.
 
-L’onglet « Les boutiques » propose une localisation à la demande avec
-`expo-location` et une recherche de boutiques Orange dans Google Maps, autour
-de la position obtenue ou dans une ville saisie. La position reste en mémoire
-pendant l’affichage de cet écran. Aucun suivi en arrière-plan n’est activé.
+## Configuration nécessaire
 
-Google Maps s’ouvre via les URLs officielles, dans l’application Google Maps
-si disponible, sinon dans le navigateur. Les résultats et horaires réels sont
-affichés par Google. Les boutons « Itinéraire » utilisent le point GPS comme
-départ, s’il est disponible, avec un trajet en voiture ou à pied.
+Les fichiers `.env*` sont exclus des archives EAS. Utiliser `.env.local` en
+développement, les variables de l’environnement EAS pour les APK et celles du
+serveur d’hébergement pour l’API. `.env.example` décrit les variables sans valeurs.
 
-La liste des trois boutiques de réservation de Robia reste une démonstration.
-Elle ne constitue pas un annuaire réel des boutiques proches et n’affiche pas de
-distances inventées. Les itinéraires de ces exemples sont résolus par nom et
-adresse dans Google Maps : vérifier la destination avant le déplacement.
+| Variable | Utilisation |
+| --- | --- |
+| `GOOGLE_MAPS_ANDROID_API_KEY` | SDK Maps for Android, limité au package `com.robia.mobile` et au SHA-1 de signature EAS |
+| `GOOGLE_MAPS_IOS_API_KEY` | SDK Maps for iOS, limité à l’identifiant iOS |
+| `EXPO_PUBLIC_GOOGLE_MAPS_WEB_API_KEY` | Maps Embed API, limité aux domaines du site web |
+| `GOOGLE_MAPS_SERVER_API_KEY` | Places API (New) et Routes API, uniquement sur le serveur, restrictions adaptées au serveur |
+| `EXPO_PUBLIC_MAPS_API_URL` | Origine HTTPS du serveur API pour un APK, par exemple `https://api.example.com` |
 
-## Activer la carte intégrée Android
+Les clés SDK et Embed sont embarquées ou visibles par conception : appliquer
+leurs restrictions. La clé serveur ne doit jamais utiliser le préfixe
+`EXPO_PUBLIC_`. Elle n’est pas transmise dans la configuration de l’application.
+Activer les API correspondantes et la facturation sur le projet Google Cloud.
 
-1. Créer un projet Google Maps Platform, configurer sa facturation et activer
-   **Maps SDK for Android** selon les instructions Google.
-2. Créer une clé limitée à cette API et à l’application Android
-   `com.robia.mobile`, avec le certificat SHA-1 de la clé de signature EAS.
-   Le SHA-1 est consultable dans le projet Expo, Configure → Credentials.
-3. Renseigner `GOOGLE_MAPS_ANDROID_API_KEY` dans `.env.local` pour les essais
-   locaux et dans l’environnement EAS `preview` pour la construction cloud.
-   Les fichiers `.env*` sont exclus de l’archive EAS : utiliser les variables EAS.
-4. Reconstruire l’APK :
+## Essais locaux
 
-   ```powershell
-   npx.cmd eas-cli@latest build --platform android --profile preview
-   ```
+1. Renseigner les clés concernées dans `.env.local`.
+2. Lancer `npx.cmd expo start` : Expo sert aussi les routes API de développement.
+3. Sur le téléphone, utiliser la même connexion réseau que le serveur Expo.
+   En développement, l’origine est déduite de `hostUri`. Il est aussi possible
+   de définir `EXPO_PUBLIC_MAPS_API_URL=http://ADRESSE_IP_DU_PC:8081`.
+4. Recréer le build natif après ajout des modules ou modification de la clé SDK.
+   L’ancien APK n’inclut pas les modules et la configuration de cette version.
 
-`app.config.ts` transmet la clé au plugin `react-native-maps` et ajoute un
-indicateur d’activation dans `extra.googleMaps`. Une clé de SDK mobile est
-embarquée dans l’application : ses restrictions d’API, de package et de
-certificat sont nécessaires. Sans clé, le composant natif de
-Google Maps n’est pas monté pour éviter une erreur dans l’APK.
+Le web utilise `/api/maps` sur sa propre origine. Un APK release utilise
+l’origine HTTPS configurée ; les routes API doivent donc être déployées sur un
+serveur compatible Expo Router. L’APK n’embarque pas ce serveur.
 
-Avec la carte activée, la position GPS est visible et la carte peut être
-déplacée et zoomée. Toucher un point d’intérêt nommé Orange permet d’ouvrir sa
-fiche Google Maps et de calculer son itinéraire par identifiant de lieu.
-La recherche de proximité reste effectuée dans Google Maps ; aucune API Places
-payante n’est appelée depuis le mobile. Les résultats de cette recherche ne sont
-pas importés dans la liste Robia.
+## Parcours
 
-Pour iOS, activer **Maps SDK for iOS**, utiliser une clé limitée à
-l’identifiant iOS de l’application et renseigner `GOOGLE_MAPS_IOS_API_KEY`.
-La version web ouvre Google Maps dans un onglet du navigateur.
+- « Me localiser » demande uniquement la permission au premier plan.
+- « Chercher dans cette zone » recherche explicitement une ville ou un quartier.
+- Les boutiques renvoyées par Google sont affichées sur la carte et dans la liste.
+  Le tri GPS indique une distance **à vol d’oiseau**, distincte de la distance routière.
+- Toucher un repère ou un résultat sélectionne une boutique et affiche sa fiche.
+- « Afficher l’itinéraire » calcule un trajet voiture ou piéton depuis le GPS.
+- La ligne orange, la distance, la durée estimée et les indications restent visibles
+  dans Robia. Il s’agit d’un aperçu, sans navigation vocale ni suivi en arrière-plan.
+- En cas de refus GPS, la recherche par ville reste utilisable ; un départ GPS
+  valide est nécessaire pour le calcul du trajet.
+- La réservation reste une démonstration, disponible uniquement pour une boutique
+  reconnue dans le catalogue Robia. Une adresse Google ne garantit pas un créneau.
 
-## Tests manuels sur appareil
+## API et architecture
 
-- Autoriser la position : coordonnées et précision réelles, recherche proche.
-- Refuser la position ou désactiver le GPS : message, nouvelle tentative et
-  recherche par ville toujours accessibles.
-- Vérifier l’ouverture d’un itinéraire en voiture puis à pied avec et sans GPS.
-- Vérifier le repli navigateur sur un téléphone sans l’application Google Maps.
-- Avec une clé valide : fond de carte Google, point GPS, sélection d’un POI Orange.
-- L’ancien APK n’inclut pas les nouveaux modules : installer un nouvel APK.
+`POST /api/maps/search` reçoit `{ position, area }`.
+`POST /api/maps/route` reçoit `{ origin, destination, mode }`.
+Les contrôleurs de routes restent légers et délèguent aux cas d’usage injectés.
+Le serveur appelle Google avec des masques de champs limités. Les réponses ne
+contiennent pas la clé et utilisent `Cache-Control: no-store`.
 
-Documentation : [Expo Maps SDK 58](https://docs.expo.dev/versions/v58.0.0/sdk/map-view/),
-[Expo Location SDK 58](https://docs.expo.dev/versions/v58.0.0/sdk/location/),
-[URLs Google Maps](https://developers.google.com/maps/documentation/urls/get-started).
+Les requêtes remplacées sont annulées ; les erreurs, résultats vides et délais
+dépassés sont affichés sans inventer de trajet ni de coordonnées. Les recherches
+sont lancées par une action utilisateur, pas à chaque caractère saisi.
+
+Une limitation de fréquence en mémoire protège les essais sur une instance.
+Avant un déploiement public, ajouter une authentification et une limitation
+distribuée, ainsi que des quotas Google adaptés au projet.
+
+## Guide utilisateur
+
+La carte des trois étapes est remplacée par React Native Copilot. Le guide
+surligne les commandes de l’accueil et des boutiques avec des textes français.
+Il est facultatif, peut être passé et relancé avec « Découvrir cet écran ».
+AsyncStorage conserve uniquement l’état « déjà proposé » du guide.
+
+L’adaptateur de mesure utilise les références hôtes RN 0.88 et le défilement DOM
+sur web ; il évite le chemin `findNodeHandle` historique de la bibliothèque.
+
+## Vérifications sur appareil
+
+- Carte et point GPS avec une clé valide, refus GPS et GPS désactivé.
+- Recherche par ville, aucun résultat, réseau indisponible.
+- Sélection par marqueur et par liste, calcul voiture puis marche.
+- Ligne orange et durée cohérentes avec la réponse Google ; aucun appel externe.
+- Guide : première proposition, passer, suivant, retour, relancer, changement d’onglet.
+- Petit écran : défilement vers les cibles et tooltip visible au-dessus du clavier fermé.
+
+Sources : [Maps Expo SDK 58](https://docs.expo.dev/versions/v58.0.0/sdk/map-view/),
+[Places API](https://developers.google.com/maps/documentation/places/web-service/text-search),
+[Routes API](https://developers.google.com/maps/documentation/routes/compute_route_directions),
+[Embed API](https://developers.google.com/maps/documentation/embed/embedding-map),
+[React Native Copilot](https://github.com/mohebifar/react-native-copilot).

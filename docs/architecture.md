@@ -66,7 +66,11 @@ Les données CIN et téléphone ne sont pas copiées dans les tickets.
   adaptateurs `.ts` natif et `.web.ts` navigateur.
 - Position : implémenter `LocationGateway`. Permissions, délais et SDK restent
   dans l’adaptateur ; le hook ne gère que l’état d’affichage.
-- Carte externe : implémenter `MapGateway`. La construction des URLs est isolée.
+- Carte intégrée : implémenter `MapGateway` pour la recherche et le calcul des
+  trajets. Le mobile utilise un adaptateur HTTP ; les routes API assemblent un
+  adaptateur Google serveur. Aucune ouverture externe n’est utilisée.
+- Guide : `GuidePreferences` mémorise les choix via AsyncStorage. Les composants
+  de présentation utilisent React Native Copilot, sans coupler le métier à la bibliothèque.
 
 Les composants cartographiques natifs et web restent dans la présentation :
 ils rendent l’interface, sans porter de règles métier. Voir

@@ -1,10 +1,11 @@
 import { useEffect, useState, type RefObject } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Keyboard, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useCopilot } from 'react-native-copilot';
 import { useAppServices } from '../../composition/app-services-provider';
 import type { GuideScope } from '../../application/onboarding/ports';
+import type { GuideScrollHandle } from './guide-spot';
 
-export function GuideEntry({ scope, scrollRef, ready }: { scope: GuideScope | null; scrollRef: RefObject<ScrollView | null>; ready: boolean }) {
+export function GuideEntry({ scope, scrollRef, ready }: { scope: GuideScope | null; scrollRef: RefObject<GuideScrollHandle | null>; ready: boolean }) {
   const { start, stop, totalStepsNumber } = useCopilot();
   const { guidePreferences } = useAppServices();
   const [promptScope, setPromptScope] = useState<GuideScope | null>(null);
@@ -23,8 +24,9 @@ export function GuideEntry({ scope, scrollRef, ready }: { scope: GuideScope | nu
   };
   const launch = () => {
     dismiss();
+    Keyboard.dismiss();
     scrollRef.current?.scrollTo({ y: 0, animated: false });
-    requestAnimationFrame(() => { void start(scope === 'home' ? 'home-reserve' : 'shops-position', scrollRef.current).catch(() => stop()); });
+    requestAnimationFrame(() => { void start(scope === 'home' ? 'home-reserve' : 'shops-position', null).catch(() => stop()); });
   };
   return <>
     <Pressable onPress={launch} disabled={!ready || totalStepsNumber < 3} style={s.link} accessibilityRole="button"><Text style={s.linkText}>ⓘ Découvrir cet écran</Text></Pressable>
