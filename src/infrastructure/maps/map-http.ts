@@ -10,7 +10,9 @@ export async function mapJson<T>(fetcher: typeof fetch, url: string, init: Reque
     const response = await fetcher(url, { ...init, signal: controller.signal });
     const json = await response.json();
     if (!response.ok) {
-      const code: MapErrorCode = response.status === 503 ? 'configuration' : response.status === 429 ? 'rate-limit' : 'provider-error';
+      const knownCodes: MapErrorCode[] = ['configuration', 'invalid-request', 'provider-error', 'no-route', 'rate-limit'];
+      const code: MapErrorCode = typeof json?.error === 'string' && knownCodes.includes(json.error)
+        ? json.error : response.status === 429 ? 'rate-limit' : 'provider-error';
       throw new MapError(code);
     }
     return json as T;
