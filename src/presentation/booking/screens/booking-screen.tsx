@@ -136,7 +136,8 @@ export default function BookingScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={[s.content, !wide && { padding: 20 }]}
           >
-            <View style={s.greeting}>
+            <GuideSpot name={tab === 'Mes rendez-vous' ? 'appointments-list' : tab === 'Mes tickets' ? 'tickets-list' : 'page-heading'} order={0}
+              text={tab === 'Mes rendez-vous' ? 'Retrouvez ici les rendez-vous pris pendant votre session : boutique, date, horaire et services. La liste est vide avant votre première réservation.' : 'Vos tickets sont accessibles ici après confirmation. Ouvrez un ticket pour voir son QR code et télécharger ou partager le PDF.'} style={s.greeting}>
               <View>
                 <Text style={s.eyebrow}>
                   MOINS D’ATTENTE, PLUS DE TEMPS POUR VOUS
@@ -169,8 +170,8 @@ export default function BookingScreen() {
                   </Text>
                 </View>
               )}
-            </View>
-<GuideEntry scope={tab === "Accueil" ? "home" : tab === "Les boutiques" ? "shops" : null} scrollRef={scrollRef} ready={layoutReady && !modal && !help} />
+            </GuideSpot>
+            <GuideEntry tab={tab} navigate={setTab} model={model} ready={layoutReady && !modal && !help} />
             {tab === "Accueil" && (
               <>
                 <View style={[s.hero, !wide && { padding: 26 }]}>
@@ -295,13 +296,13 @@ export default function BookingScreen() {
             {tab === "Les boutiques" && <ShopLocator shops={shops} onBook={(index) => open(undefined, index)} />}
             {tab === "Accueil" && (
               <>
-                <GuideSpot name="home-shops" order={3} text="Ouvrez les boutiques pour vous localiser, consulter la carte et préparer votre itinéraire dans Robia." style={s.sectionHead}>
+                <GuideSpot name="home-shops" order={3} text="Ouvrez les boutiques pour vous localiser, consulter les adresses du catalogue et réserver votre visite dans Robia." style={s.sectionHead}>
                   <View>
                     <Text style={s.sectionTitle}>
                       Trouvez votre boutique Orange
                     </Text>
                     <Text style={s.sectionSub}>
-                      Localisez-vous pour découvrir les boutiques proches.
+                      Consultez les adresses du catalogue Robia.
                     </Text>
                   </View>
                   {tab === "Accueil" && (
@@ -376,7 +377,7 @@ export default function BookingScreen() {
                 <View style={s.demoNote}>
                   <Icon name="pin" color="#aaa" size={12} />
                   <Text style={s.noteText}>
-                    Exemples de boutiques · Consultez Google Maps pour les établissements proches.
+                    Boutiques et créneaux de démonstration · Adresses à confirmer avant votre visite.
                   </Text>
                 </View>
               </>

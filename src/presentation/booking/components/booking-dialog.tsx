@@ -1,4 +1,7 @@
+import { useRef } from 'react';
 import { Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { GuideSpot, GuideViewport, type GuideScrollHandle } from '../../onboarding/guide-spot';
+import { useGuideRuntime } from '../../onboarding/guide-runtime';
 import { BRAND_ORANGE as orange } from '../../shared/brand';
 import { Icon } from './booking-icon';
 import { QR } from './ticket-qr';
@@ -6,8 +9,10 @@ import { Button } from './booking-button';
 import { bookingStyles as s } from '../screens/booking-screen.styles';
 import type { BookingWorkflow } from '../hooks/use-booking-workflow';
 export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: boolean }) {
+  const scrollRef = useRef<GuideScrollHandle>(null);
+  const { active: guideActive } = useGuideRuntime();
   const { modal, setModal, step, name, setName, cin, setCin, phone, setPhone, validate, setStep, services, setSelected, selected, shops, setShop, shop, setError, dates, setDay, day, appointmentTimes, setTime, time, confirm, ticket, busy, pdf, error } = model;
-  return (<Modal
+  return (<GuideViewport scrollRef={scrollRef}><Modal
     visible={modal}
     transparent
     animationType="fade"
@@ -16,10 +21,17 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
     <View style={s.modalBackdrop}>
       <View style={s.modalCard}>
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={{ padding: wide ? 30 : 22 }}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={s.modalHeading}>
+          <GuideSpot key={step} name={['booking-customer', 'booking-services', 'booking-time', 'booking-ticket'][step]} order={1}
+            text={[
+              'Renseignez votre nom et votre CIN à 12 chiffres. Le numéro de téléphone est facultatif. Cette visite guidée ne saisit aucune information à votre place.',
+              'Choisissez un ou plusieurs services, puis votre boutique. Vous retrouverez ces choix dans votre ticket après confirmation.',
+              'Choisissez le jour et un horaire entre 08 h et 16 h. La confirmation crée votre rendez-vous et son ticket. Pendant le guide, aucune réservation n’est effectuée.',
+              'Retrouvez ici votre QR code, votre identifiant et le bouton pour enregistrer ou partager le ticket PDF.',
+            ][step]} style={s.modalHeading}>
             <View style={{ flex: 1 }}>
               <Text style={s.eyebrow}>
                 {step === 3 ? "VOTRE TICKET" : `ÉTAPE ${step + 1} SUR 3`}
@@ -42,7 +54,7 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
             >
               <Icon name="close" />
             </Pressable>
-          </View>
+          </GuideSpot>
           {step < 3 && (
             <View style={s.progress}>
               {[0, 1, 2].map((i) => (
@@ -214,7 +226,7 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
                 Mode démonstration : ces horaires ne sont pas synchronisés
                 avec la boutique.
               </Text>
-              <Button label="Confirmer mon rendez-vous" onPress={confirm} />
+              <Button label="Confirmer mon rendez-vous" disabled={guideActive} onPress={confirm} />
             </View>
           )}
           {step === 3 && ticket && (
@@ -275,5 +287,5 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
         </ScrollView>
       </View>
     </View>
-  </Modal>);
+  </Modal></GuideViewport>);
 }

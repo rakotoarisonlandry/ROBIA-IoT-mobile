@@ -1,5 +1,5 @@
-import { MapError, isValidCoordinates, type Coordinates, type MapSearch, type RouteRequest } from '../../domain/location/entities';
-import type { MapGateway } from './ports';
+import type { CatalogRepository } from '../booking/ports';
+import { MapError, isValidCoordinates, type Coordinates, type MapPlace, type MapSearch } from '../../domain/location/entities';
 
 export function distanceBetween(a: Coordinates, b: Coordinates): number {
   const rad = (value: number) => value * Math.PI / 180;
@@ -7,31 +7,27 @@ export function distanceBetween(a: Coordinates, b: Coordinates): number {
     + Math.cos(rad(a.latitude)) * Math.cos(rad(b.latitude)) * Math.sin(rad(b.longitude - a.longitude) / 2) ** 2;
   return 6371000 * 2 * Math.asin(Math.sqrt(Math.min(1, h)));
 }
+const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr').trim();
 
-export function createSearchShops(gateway: MapGateway) {
-  return async (request: MapSearch, signal?: AbortSignal) => {
+/** Local catalogue only: no Places, geocoding or Routes requests. */
+export function createSearchShops(catalog: Pick<CatalogRepository, 'getShops'>) {
+  return (request: MapSearch): MapPlace[] => {
     if (!request || typeof request.area !== 'string' || request.area.length > 120
-      || (request.position != null && !isValidCoordinates(request.position))
-      || (!request.position && !request.area.trim())) throw new MapError('invalid-request');
-    const places = await gateway.search({ position: request.position ?? null, area: request.area.trim() }, signal);
-    return places.filter(place => isValidCoordinates(place.coordinates)).map(place => ({
-      ...place,
-      ...(request.position ? { straightLineMeters: distanceBetween(request.position, place.coordinates!) } : {}),
-    })).sort((a, b) => (a.straightLineMeters ?? 0) - (b.straightLineMeters ?? 0));
-  };
-}
-
-export function createGetRoute(gateway: MapGateway) {
-  return async (request: RouteRequest, signal?: AbortSignal) => {
-    if (!request || !isValidCoordinates(request.origin) || !request.destination
-      || typeof request.destination.name !== 'string'
-      || (request.mode !== 'walking' && request.mode !== 'driving')) throw new MapError('invalid-request');
-    const { placeId, coordinates } = request.destination;
-    if (!(typeof placeId === 'string' && /^[\w-]{1,200}$/.test(placeId)) && !isValidCoordinates(coordinates)) throw new MapError('invalid-request');
-    const route = await gateway.route(request, signal);
-    if (route.coordinates.length < 2 || route.coordinates.some(point => !isValidCoordinates(point))
-      || !Number.isFinite(route.distanceMeters) || route.distanceMeters < 0
-      || !Number.isFinite(route.durationSeconds) || route.durationSeconds < 0) throw new MapError('no-route');
-    return route;
+      || (request.position != null && !isValidCoordinates(request.position))) throw new MapError('invalid-request');
+    const query = normalize(request.area);
+    return catalog.getShops()
+      .filter(shop => normalize(shop.name + ' ' + shop.address).includes(query))
+      .map(shop => {
+        const coordinates = isValidCoordinates(shop.coordinates) ? { ...shop.coordinates } : undefined;
+        return {
+          shopId: shop.id, name: shop.name, address: shop.address, isDemo: shop.isDemo,
+          ...(coordinates ? { coordinates } : {}),
+          ...(coordinates && request.position ? { straightLineMeters: distanceBetween(request.position, coordinates) } : {}),
+        };
+      })
+      .sort((a, b) => {
+        if (a.straightLineMeters == null) return b.straightLineMeters == null ? 0 : 1;
+        return b.straightLineMeters == null ? -1 : a.straightLineMeters - b.straightLineMeters;
+      });
   };
 }

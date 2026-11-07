@@ -1,94 +1,62 @@
-# Carte Google Maps dans Robia
+# Carte OpenStreetMap minimale dans Robia
 
-La carte, les résultats et l’aperçu du trajet restent dans l’application.
-Aucun bouton de recherche ou d’itinéraire n’ouvre Google Maps à l’extérieur.
-Cela nécessite une connexion internet et une configuration Google Maps active.
+La carte est affichée dans Robia via la page d’intégration officielle OpenStreetMap :
+`https://www.openstreetmap.org/export/embed.html`.
+Sur Android et iOS, cette page est intégrée dans `react-native-webview`.
+Le web utilise une iframe. Aucun compte Google, clé API, carte bancaire, serveur
+Places/Routes ou compte de facturation n’est nécessaire.
 
-## Configuration nécessaire
+## Fonctionnalités
 
-Les fichiers `.env*` sont exclus des archives EAS. Utiliser `.env.local` en
-développement, les variables de l’environnement EAS pour les APK et celles du
-serveur d’hébergement pour l’API. `.env.example` décrit les variables sans valeurs.
+- Position GPS fournie par Expo Location, uniquement sur demande de l’utilisateur.
+- Carte centrée sur cette position ou sur la boutique sélectionnée.
+- Un repère pour le point sélectionné ; sélectionner une autre boutique dans la liste
+  recentre la carte sur ses coordonnées. Sans coordonnées validées, aucun repère
+  de boutique n’est inventé.
+- Déplacement et zoom dans la carte, attribution OpenStreetMap visible.
+- Catalogue local, filtre par nom/adresse et réservation.
+- Distances à vol d’oiseau calculées localement lorsque les coordonnées sont connues.
 
-| Variable | Utilisation |
-| --- | --- |
-| `GOOGLE_MAPS_ANDROID_API_KEY` | SDK Maps for Android, limité au package `com.robia.mobile` et au SHA-1 de signature EAS |
-| `GOOGLE_MAPS_IOS_API_KEY` | SDK Maps for iOS, limité à l’identifiant iOS |
-| `EXPO_PUBLIC_GOOGLE_MAPS_WEB_API_KEY` | Maps Embed API, limité aux domaines du site web |
-| `GOOGLE_MAPS_SERVER_API_KEY` | Places API (New) et Routes API, uniquement sur le serveur, restrictions adaptées au serveur |
-| `EXPO_PUBLIC_MAPS_API_URL` | Origine HTTPS du serveur API pour un APK, par exemple `https://api.example.com` |
+Il n’y a ni recherche mondiale de boutiques, ni calcul d’itinéraire, ni navigation,
+ni téléchargement hors ligne des cartes. Le fond de carte nécessite internet.
+Sans GPS ou sans réseau, le catalogue et les réservations de démonstration restent
+disponibles. Le composant natif affiche une erreur et permet de réessayer si la page
+de carte échoue à charger.
 
-Les clés SDK et Embed sont embarquées ou visibles par conception : appliquer
-leurs restrictions. La clé serveur ne doit jamais utiliser le préfixe
-`EXPO_PUBLIC_`. Elle n’est pas transmise dans la configuration de l’application.
-Activer les API correspondantes et la facturation sur le projet Google Cloud.
+## Données du catalogue
 
-## Essais locaux
+Les trois boutiques de `src/infrastructure/catalog/demo-catalog.ts` sont des données
+de démonstration, sans coordonnées validées. Elles sont identifiées comme telles
+dans la liste. Pour une vraie boutique, renseigner son champ
+`coordinates: { latitude, longitude }` après vérification et conserver son identifiant
+de réservation. Aucune distance fictive n’est affichée.
 
-1. Renseigner les clés concernées dans `.env.local`.
-2. Lancer `npx.cmd expo start` : Expo sert aussi les routes API de développement.
-3. Sur le téléphone, utiliser la même connexion réseau que le serveur Expo.
-   En développement, l’origine est déduite de `hostUri`. Il est aussi possible
-   de définir `EXPO_PUBLIC_MAPS_API_URL=http://ADRESSE_IP_DU_PC:8081`.
-4. Recréer le build natif après ajout des modules ou modification de la clé SDK.
-   L’ancien APK n’inclut pas les modules et la configuration de cette version.
+## Configuration et build
 
-Le web utilise `/api/maps` sur sa propre origine. Un APK release utilise
-l’origine HTTPS configurée ; les routes API doivent donc être déployées sur un
-serveur compatible Expo Router. L’APK n’embarque pas ce serveur.
+Les variables Google Maps, clés SDK et adresses de serveur de cartes ne sont plus
+utilisées. Le module `react-native-maps` a été retiré. Le nouveau module WebView
+nécessite de reconstruire l’APK ; l’ancien APK ne reçoit pas cette modification.
 
-## Parcours
+L’application utilise la page OSM officielle plutôt qu’un téléchargement direct ou
+massif de tuiles. La WebView utilise le cache HTTP normal et ajoute l’identification
+Robia à son User-Agent. L’iframe conserve un Referer normal. L’attribution reste
+visible et les pages OSM consultées depuis la carte restent dans la WebView native
+avec un bouton pour revenir à la carte.
 
-- « Me localiser » demande uniquement la permission au premier plan.
-- « Chercher dans cette zone » recherche explicitement une ville ou un quartier.
-- Les boutiques renvoyées par Google sont affichées sur la carte et dans la liste.
-  Le tri GPS indique une distance **à vol d’oiseau**, distincte de la distance routière.
-- Toucher un repère ou un résultat sélectionne une boutique et affiche sa fiche.
-- « Afficher l’itinéraire » calcule un trajet voiture ou piéton depuis le GPS.
-- La ligne orange, la distance, la durée estimée et les indications restent visibles
-  dans Robia. Il s’agit d’un aperçu, sans navigation vocale ni suivi en arrière-plan.
-- En cas de refus GPS, la recherche par ville reste utilisable ; un départ GPS
-  valide est nécessaire pour le calcul du trajet.
-- La réservation reste une démonstration, disponible uniquement pour une boutique
-  reconnue dans le catalogue Robia. Une adresse Google ne garantit pas un créneau.
+Les serveurs publics OpenStreetMap sont un service à disponibilité non garantie,
+adapté à des essais légers respectant leurs règles. Avant diffusion à grande
+échelle, choisir un hébergement cartographique adapté à la charge ; la gratuité
+des données OSM n’est pas une promesse d’hébergement illimité.
 
-## API et architecture
+## Tests
 
-`POST /api/maps/search` reçoit `{ position, area }`.
-`POST /api/maps/route` reçoit `{ origin, destination, mode }`.
-Les contrôleurs de routes restent légers et délèguent aux cas d’usage injectés.
-Le serveur appelle Google avec des masques de champs limités. Les réponses ne
-contiennent pas la clé et utilisent `Cache-Control: no-store`.
+`npm test` couvre le catalogue local, le tri par distance, les coordonnées invalides,
+l’absence d’appels Google et la génération des vues OSM (GPS, sélection, absence de
+repère fictif et limites de coordonnées).
+La carte native doit être vérifiée dans le nouvel APK, avec GPS autorisé/refusé et
+réseau disponible/indisponible.
 
-Les requêtes remplacées sont annulées ; les erreurs, résultats vides et délais
-dépassés sont affichés sans inventer de trajet ni de coordonnées. Les recherches
-sont lancées par une action utilisateur, pas à chaque caractère saisi.
-
-Une limitation de fréquence en mémoire protège les essais sur une instance.
-Avant un déploiement public, ajouter une authentification et une limitation
-distribuée, ainsi que des quotas Google adaptés au projet.
-
-## Guide utilisateur
-
-La carte des trois étapes est remplacée par React Native Copilot. Le guide
-surligne les commandes de l’accueil et des boutiques avec des textes français.
-Il est facultatif, peut être passé et relancé avec « Découvrir cet écran ».
-AsyncStorage conserve uniquement l’état « déjà proposé » du guide.
-
-L’adaptateur de mesure utilise les références hôtes RN 0.88 et le défilement DOM
-sur web ; il évite le chemin `findNodeHandle` historique de la bibliothèque.
-
-## Vérifications sur appareil
-
-- Carte et point GPS avec une clé valide, refus GPS et GPS désactivé.
-- Recherche par ville, aucun résultat, réseau indisponible.
-- Sélection par marqueur et par liste, calcul voiture puis marche.
-- Ligne orange et durée cohérentes avec la réponse Google ; aucun appel externe.
-- Guide : première proposition, passer, suivant, retour, relancer, changement d’onglet.
-- Petit écran : défilement vers les cibles et tooltip visible au-dessus du clavier fermé.
-
-Sources : [Maps Expo SDK 58](https://docs.expo.dev/versions/v58.0.0/sdk/map-view/),
-[Places API](https://developers.google.com/maps/documentation/places/web-service/text-search),
-[Routes API](https://developers.google.com/maps/documentation/routes/compute_route_directions),
-[Embed API](https://developers.google.com/maps/documentation/embed/embedding-map),
-[React Native Copilot](https://github.com/mohebifar/react-native-copilot).
+Sources :
+- https://www.openstreetmap.org
+- https://operations.osmfoundation.org/policies/tiles/
+- https://docs.expo.dev/versions/v58.0.0/sdk/webview/

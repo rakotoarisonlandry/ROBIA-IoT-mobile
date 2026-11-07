@@ -2,6 +2,7 @@ import { Modal, Pressable, Text, View } from 'react-native';
 import { Icon } from './booking-icon';
 import { Button } from './booking-button';
 import { bookingStyles as s } from '../screens/booking-screen.styles';
+import { GuideSpot } from '../../onboarding/guide-spot';
 export function HelpDialog({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   return (<Modal
     visible={visible}
@@ -11,7 +12,7 @@ export function HelpDialog({ visible, onClose }: { visible: boolean; onClose: ()
   >
     <View style={s.modalBackdrop}>
       <View style={[s.modalCard, { padding: 28, gap: 18 }]}>
-        <View style={s.modalHeading}>
+        <GuideSpot name="help-content" order={1} text="L’aide récapitule la réservation et les documents à présenter. Le guide est terminé : vous pouvez le relancer avec « Revoir le guide »." style={s.modalHeading}>
           <Text style={s.modalTitle}>Comment ça marche ?</Text>
           <Pressable
             onPress={onClose}
@@ -19,7 +20,7 @@ export function HelpDialog({ visible, onClose }: { visible: boolean; onClose: ()
           >
             <Icon name="close" />
           </Pressable>
-        </View>
+        </GuideSpot>
         <Text style={s.subtitle}>
           1. Renseignez votre nom et votre CIN.{"\n\n"}2. Choisissez vos
           services, votre boutique et votre horaire entre 08 h et 16 h.

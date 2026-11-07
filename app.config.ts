@@ -1,8 +1,6 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => {
-  const androidKey = process.env.GOOGLE_MAPS_ANDROID_API_KEY?.trim();
-  const iosKey = process.env.GOOGLE_MAPS_IOS_API_KEY?.trim();
   return {
     ...config,
     name: config.name ?? 'robia-IoT',
@@ -15,14 +13,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         isAndroidBackgroundLocationEnabled: false,
         isAndroidForegroundServiceEnabled: false,
       }],
-      ...(androidKey || iosKey ? [['react-native-maps', {
-        ...(androidKey ? { androidGoogleMapsApiKey: androidKey } : {}),
-        ...(iosKey ? { iosGoogleMapsApiKey: iosKey } : {}),
-      }] as [string, Record<string, string>]] : []),
     ],
-    extra: {
-      ...config.extra,
-      googleMaps: { androidEnabled: !!androidKey, iosEnabled: !!iosKey },
-    },
   };
 };

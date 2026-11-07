@@ -9,6 +9,7 @@ export type Shop = {
   agent: string;
   queuePrefix: string;
   isDemo: boolean;
+  coordinates?: { latitude: number; longitude: number };
 };
 export type Customer = { name: string; cin: string; phone: string };
 export type Ticket = {

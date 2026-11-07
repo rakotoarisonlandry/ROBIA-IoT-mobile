@@ -11,12 +11,11 @@ src/
     location/          Coordonnées et résultats de localisation
   application/         Cas d’usage et interfaces des dépendances
     booking/           Réserver et exporter un ticket
-    location/          Obtenir une position validée
+    location/          Position validée, filtre local et distances à vol d’oiseau
   infrastructure/      Implémentations techniques des interfaces
     catalog/           Catalogue de démonstration
     tickets/           Stockage en mémoire de la session
     location/          Permissions et lecture GPS avec Expo Location
-    maps/              URLs et ouverture de Google Maps
     pdf/               Génération PDF et export natif/web
     config/            Lecture de la configuration Expo
     system/            Horloge et références de démonstration
@@ -66,15 +65,18 @@ Les données CIN et téléphone ne sont pas copiées dans les tickets.
   adaptateurs `.ts` natif et `.web.ts` navigateur.
 - Position : implémenter `LocationGateway`. Permissions, délais et SDK restent
   dans l’adaptateur ; le hook ne gère que l’état d’affichage.
-- Carte intégrée : implémenter `MapGateway` pour la recherche et le calcul des
-  trajets. Le mobile utilise un adaptateur HTTP ; les routes API assemblent un
-  adaptateur Google serveur. Aucune ouverture externe n’est utilisée.
-- Guide : `GuidePreferences` mémorise les choix via AsyncStorage. Les composants
-  de présentation utilisent React Native Copilot, sans coupler le métier à la bibliothèque.
+- Carte minimale : `createSearchShops` filtre le `CatalogRepository` et calcule
+  les distances localement pour les boutiques ayant des coordonnées. La carte
+  utilise la page d’intégration OpenStreetMap dans une WebView native ou iframe web. Les adaptateurs HTTP et routes
+  serveur Places/Routes sont supprimés ; aucun fournisseur payant n’est appelé
+  pour rechercher les boutiques ou calculer des trajets.
+- Guide : `GuidePreferences` mémorise la fin du parcours complet via AsyncStorage.
+  React Native Copilot affiche les cibles, et un contrôleur de présentation ouvre
+  les onglets et formulaires sans confirmer de réservation. Voir [guide.md](guide.md).
 
 Les composants cartographiques natifs et web restent dans la présentation :
 ils rendent l’interface, sans porter de règles métier. Voir
-[google-maps.md](google-maps.md) pour les limites sans clé Google Maps.
+[google-maps.md](google-maps.md) pour la carte OpenStreetMap sans clé ni facturation.
 
 ## Vérification
 

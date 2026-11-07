@@ -1,18 +1,15 @@
 export type Coordinates = { latitude: number; longitude: number };
-export type TravelMode = 'driving' | 'walking';
-export type MapPlace = { name: string; address?: string; placeId?: string; coordinates?: Coordinates; straightLineMeters?: number };
-export type MapRoute = {
-  coordinates: Coordinates[];
-  distanceMeters: number;
-  durationSeconds: number;
-  steps: { instruction: string; distanceMeters: number }[];
-  warnings: string[];
+export type MapPlace = {
+  shopId: string;
+  name: string;
+  address: string;
+  isDemo: boolean;
+  coordinates?: Coordinates;
+  straightLineMeters?: number;
 };
 export type MapSearch = { position: Coordinates | null; area: string };
-export type RouteRequest = { origin: Coordinates; destination: MapPlace; mode: TravelMode };
-export type MapErrorCode = 'configuration' | 'invalid-request' | 'provider-error' | 'no-route' | 'rate-limit';
 export class MapError extends Error {
-  constructor(public readonly code: MapErrorCode) { super(code); this.name = 'MapError'; }
+  constructor(public readonly code: 'invalid-request') { super(code); this.name = 'MapError'; }
 }
 export type UserLocation = { coords: Coordinates & { accuracy: number | null }; timestamp: number };
 export type LocationResult =

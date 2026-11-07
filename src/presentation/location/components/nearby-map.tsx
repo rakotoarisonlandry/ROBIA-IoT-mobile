@@ -1,31 +1,45 @@
-import { useEffect, useRef, useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
-import { useAppServices } from '../../../composition/app-services-provider';
-import MapPlaceholder from './map-placeholder';
+import { useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { WebView } from 'react-native-webview';
+import { openStreetMapUrl } from '../models/openstreetmap';
 import type { NearbyMapProps } from './map.types';
 
-export default function NearbyMap({ position, selected, onSelect, places, route }: NearbyMapProps) {
-  const { mapConfiguration } = useAppServices();
-  const map = useRef<MapView>(null);
-  const [ready, setReady] = useState(false);
-  const enabled = Platform.OS === 'android' ? mapConfiguration.androidEnabled : mapConfiguration.iosEnabled;
-  useEffect(() => {
-    if (!ready) return;
-    const points = route?.coordinates ?? places.flatMap(place => place.coordinates ? [place.coordinates] : []);
-    const coordinates = [...points, ...(position ? [position] : []), ...(selected?.coordinates ? [selected.coordinates] : [])];
-    if (coordinates.length > 1) map.current?.fitToCoordinates(coordinates, { edgePadding: { top: 55, bottom: 65, left: 45, right: 45 }, animated: true });
-    else if (coordinates.length === 1) map.current?.animateToRegion({ ...coordinates[0], latitudeDelta: .025, longitudeDelta: .025 }, 400);
-  }, [places, position, ready, route, selected]);
-  if (!enabled) return <MapPlaceholder />;
-  const selectedInResults = selected && places.some(place => place.placeId === selected.placeId);
-  return <View style={s.container}><MapView ref={map} style={StyleSheet.absoluteFill} provider={PROVIDER_GOOGLE}
-    initialRegion={{ latitude: -18.8792, longitude: 47.5079, latitudeDelta: .15, longitudeDelta: .15 }}
-    onMapReady={() => setReady(true)} showsUserLocation={!!position} showsMyLocationButton={!!position} showsCompass toolbarEnabled={false}
-    onPoiClick={({ nativeEvent }) => { if (/\borange\b/i.test(nativeEvent.name)) onSelect({ name: nativeEvent.name, placeId: nativeEvent.placeId, coordinates: nativeEvent.coordinate }); }}>
-    {places.map(place => place.coordinates && <Marker key={place.placeId ?? place.name} coordinate={place.coordinates} title={place.name} description={place.address} pinColor={selected?.placeId === place.placeId ? '#222222' : '#ff6600'} onPress={() => onSelect(place)} />)}
-    {selected?.coordinates && !selectedInResults && <Marker coordinate={selected.coordinates} title={selected.name} pinColor="#222222" />}
-    {route && <Polyline coordinates={route.coordinates} strokeWidth={5} strokeColor="#ff6600" />}
-  </MapView></View>;
+export default function NearbyMap({ position, selected }: NearbyMapProps) {
+  const [error, setError] = useState(false);
+  const [revision, setRevision] = useState(0);
+  const [away, setAway] = useState(false);
+  const uri = useMemo(() => openStreetMapUrl(position, selected?.coordinates), [position, selected?.coordinates]);
+  const source = useMemo(() => ({ uri }), [uri]);
+  const reset = () => { setError(false); setAway(false); setRevision(value => value + 1); };
+  return <View style={s.surface}>
+    <View style={s.map}>
+      <WebView key={uri + ':' + revision} source={source} style={s.webview}
+        applicationNameForUserAgent="Robia/1.0 (com.robia.mobile)"
+        originWhitelist={['https://www.openstreetmap.org', 'https://openstreetmap.org']}
+        javaScriptEnabled domStorageEnabled cacheEnabled startInLoadingState
+        setSupportMultipleWindows={false}
+        onShouldStartLoadWithRequest={request => request.url === 'about:blank' || /^https:\/\/(www\.)?openstreetmap\.org\//.test(request.url)}
+        onNavigationStateChange={state => setAway(!state.url.includes('/export/embed.html'))}
+        onError={() => setError(true)}
+        onHttpError={event => { if (event.nativeEvent.url === uri) setError(true); }}
+        renderLoading={() => <View style={s.loading}><ActivityIndicator color="#ff6600" /><Text style={s.caption}>Chargement de la carte…</Text></View>}
+      />
+      {error && <View style={s.loading}><Text style={s.message}>La carte n’a pas pu être chargée. Vérifiez votre connexion internet.</Text><Pressable onPress={reset} style={s.retry}><Text style={s.action}>Réessayer</Text></Pressable></View>}
+    </View>
+    <View style={s.footer}>
+      <Text style={s.caption}>© OpenStreetMap contributors · Carte en ligne</Text>
+      {away && <Pressable onPress={reset} style={s.retry}><Text style={s.action}>Retour à la carte</Text></Pressable>}
+    </View>
+  </View>;
 }
-const s = StyleSheet.create({ container: { height: 350, borderRadius: 15, overflow: 'hidden' } });
+const s = StyleSheet.create({
+  surface: { borderRadius: 15, overflow: 'hidden', backgroundColor: 'white', borderWidth: 1, borderColor: '#eee' },
+  map: { height: 350 },
+  webview: { flex: 1, backgroundColor: '#f5f5f5' },
+  loading: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#fff7f0', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
+  footer: { paddingHorizontal: 12, minHeight: 40, justifyContent: 'center' },
+  caption: { color: '#777', fontSize: 10 },
+  message: { color: '#555', textAlign: 'center', fontSize: 13, lineHeight: 21 },
+  retry: { minHeight: 44, justifyContent: 'center' },
+  action: { color: '#e65b00', fontSize: 12, fontWeight: '600' },
+});

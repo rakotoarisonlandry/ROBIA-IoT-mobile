@@ -28,3 +28,26 @@ npx.cmd expo export --platform android --output-dir dist-android --max-workers 2
 ```
 
 La dernière commande valide le bundle Android ; elle ne produit pas un APK.
+
+## Vérifier le démarrage de l’APK sans câble
+
+Installer l’APK `preview` sur un émulateur Android, puis ouvrir l’application
+depuis son icône. Aucun serveur Metro n’est nécessaire.
+
+```powershell
+adb install --no-streaming -r chemin/Robia.apk
+adb shell am start -W -n com.robia.mobile/.MainActivity
+adb logcat -d -b crash
+```
+
+Le build Android 2 se fermait dans `androidx.startup.InitializationProvider`
+avant le chargement de React Native : Room ne pouvait pas instancier
+`androidx.work.impl.WorkDatabase`. L’inspection du DEX a confirmé que
+`WorkDatabase_Impl` existait mais ne possédait plus de constructeur.
+
+La règle ciblée `extraProguardRules` dans `app.json`, appliquée par
+`expo-build-properties`, conserve son constructeur public sans désactiver R8.
+Conserver cette règle tant que la dépendance Room concernée l’exige.
+Après toute modification des dépendances natives, vérifier aussi le démarrage
+du véritable APK release ; lint, TypeScript et l’export du bundle ne couvrent
+pas les initialisations Android avant JavaScript.
