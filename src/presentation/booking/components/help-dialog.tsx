@@ -29,7 +29,7 @@ export function HelpDialog({ visible, onClose }: { visible: boolean; onClose: ()
         </Text>
         <Text style={s.small}>
           Cette version utilise des données de démonstration. Les
-          réservations sont conservées pendant cette session uniquement. La
+          réservations sont conservées sur cet appareil. La
           connexion au système des agents commerciaux sera nécessaire pour
           confirmer les disponibilités et attribuer les numéros de file.
         </Text>

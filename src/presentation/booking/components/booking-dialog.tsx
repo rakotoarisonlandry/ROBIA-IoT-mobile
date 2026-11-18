@@ -175,13 +175,21 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
           )}
           {step === 2 && (
             <View style={s.form}>
+              <View style={{ backgroundColor: '#fff5ed', borderRadius: 16, padding: 16, gap: 4 }}>
+                <Text style={{ fontSize: 12, color: '#d65a00', fontWeight: '700' }}>VOTRE VISITE</Text>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: '#252525' }}>{dates[day].toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} · {time}</Text>
+                <Text style={s.small}>Choisissez un jour puis un horaire.</Text>
+              </View>
               <Text style={s.label}>Le jour qui vous convient</Text>
-              <View style={s.days}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 4 }}>
                 {dates.map((d, i) => (
                   <Pressable
-                    key={i}
+                    key={d.toISOString()}
                     onPress={() => setDay(i)}
-                    style={[s.day, day === i && s.optionSelected]}
+                    accessibilityRole="button"
+                    accessibilityLabel={d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    accessibilityState={{ selected: day === i }}
+                    style={{ width: 67, minHeight: 90, borderRadius: 16, borderWidth: 1, borderColor: day === i ? orange : '#ececef', backgroundColor: day === i ? '#fff0e5' : 'white', alignItems: 'center', justifyContent: 'center', gap: 3 }}
                   >
                     <Text style={[s.small, day === i && { color: orange }]}>
                       {d.toLocaleDateString("fr-FR", { weekday: "short" })}
@@ -191,16 +199,19 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
                     >
                       {d.getDate()}
                     </Text>
+                    <Text style={[s.small, day === i && { color: orange }]}>{d.toLocaleDateString('fr-FR', { month: 'short' })}</Text>
                   </Pressable>
                 ))}
-              </View>
+              </ScrollView>
               <Text style={s.label}>Votre heure de rendez-vous</Text>
               <View style={s.times}>
                 {appointmentTimes.map((t) => (
                   <Pressable
                     key={t}
                     onPress={() => setTime(t)}
-                    style={[s.time, time === t && s.optionSelected]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: time === t }}
+                    style={[s.time, { minHeight: 46, borderRadius: 12 }, time === t && s.optionSelected]}
                   >
                     <Text
                       style={{
@@ -254,6 +265,7 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
                 Présentez ce QR code et votre CIN originale.{"\n"}Pensez à
                 arriver 10 minutes à l’avance.
               </Text>
+              {!!model.reminderMessage && <Text accessibilityRole="alert" style={[s.small, { textAlign: 'center' }]}>{model.reminderMessage}</Text>}
               <Button
                 label={busy ? "Préparation…" : "Télécharger le ticket PDF"}
                 secondary

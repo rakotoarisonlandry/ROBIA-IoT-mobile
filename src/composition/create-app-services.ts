@@ -1,3 +1,4 @@
+import { observeNotificationResponses, scheduleBookingReminder } from '../infrastructure/notifications/booking-notifications';
 import { createBookAppointment } from "../application/booking/book-appointment";
 import { createExportTicket } from "../application/booking/export-ticket";
 import { createLocateUser } from "../application/location/locate-user";
@@ -8,11 +9,11 @@ import { expoLocationGateway } from "../infrastructure/location/expo-location-ga
 import { guidePreferences } from "../infrastructure/onboarding/async-storage-guide-preferences";
 import { ticketExporter } from "../infrastructure/pdf/ticket-exporter";
 import { demoReferences, systemClock } from "../infrastructure/system/runtime";
-import { InMemoryTicketRepository } from "../infrastructure/tickets/in-memory-ticket-repository";
+import { AsyncStorageTicketRepository } from "../infrastructure/tickets/async-storage-ticket-repository";
 
 /** One container per mounted application, never shared between SSR requests. */
 export function createAppServices() {
-  const tickets = new InMemoryTicketRepository();
+  const tickets = new AsyncStorageTicketRepository();
   const clock = systemClock;
   const references = demoReferences;
   return {
@@ -39,6 +40,8 @@ export function createAppServices() {
       search: createSearchShops(demoCatalog),
     },
     guidePreferences,
+    scheduleBookingReminder,
+    observeNotificationResponses,
   };
 }
 export type AppServices = ReturnType<typeof createAppServices>;

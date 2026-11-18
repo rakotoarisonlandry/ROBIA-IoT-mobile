@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppServices } from '../../../composition/app-services-provider';
 import { APPOINTMENT_TIMES, validateCustomer } from '../../../domain/booking/rules';
 import { bookingErrorMessage } from '../models/booking-messages';
@@ -24,11 +26,13 @@ export function useBookingWorkflow() {
   const [ticket, setTicket] = useState<TicketViewModel | null>(null);
   const [busy, setBusy] = useState(false);
   const [help, setHelp] = useState(false);
+  const [reminderMessage, setReminderMessage] = useState('');
+  const [readReferences, setReadReferences] = useState<string[]>([]);
   const bookingPending = useRef(false);
   const exportPending = useRef(false);
   const ticketRevision = useRef(0);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     let active = true;
     const revision = ticketRevision.current;
     void app.listTickets().then(tickets => {
@@ -36,13 +40,16 @@ export function useBookingWorkflow() {
         setTickets(tickets.map(ticket => toTicketViewModel(ticket, catalog.shops, catalog.services)));
       }
     }).catch(() => { if (active) setError('Les tickets n’ont pas pu être chargés.'); });
+    void AsyncStorage.getItem('@robia/read-notifications-v1').then(value => {
+      if (active) setReadReferences(value ? JSON.parse(value) : []);
+    }).catch(() => {});
     return () => { active = false; };
-  }, [app, catalog]);
+  }, [app, catalog]));
 
   const open = (service?: number, store?: number) => {
     if (service !== undefined) setSelected([service]);
     if (store !== undefined) setShop(store);
-    setStep(0); setError(''); setTicket(null); setModal(true);
+    setStep(0); setError(''); setReminderMessage(''); setTicket(null); setModal(true);
   };
   const validate = () => {
     try { validateCustomer({ name, cin, phone }); setError(''); return true; }
@@ -60,7 +67,13 @@ export function useBookingWorkflow() {
         day: dates[day], time,
       });
       setTickets((await app.listTickets()).map(ticket => toTicketViewModel(ticket, catalog.shops, catalog.services)));
-      setTicket(toTicketViewModel(result, catalog.shops, catalog.services));
+      const confirmed = toTicketViewModel(result, catalog.shops, catalog.services);
+      void app.scheduleBookingReminder(result.appointmentAt, shops[confirmed.shop]?.name ?? 'votre boutique').then(status => {
+        if (status === 'scheduled') setReminderMessage('Un rappel est prévu une heure avant votre rendez-vous.');
+        else if (status === 'denied') setReminderMessage('Activez les notifications dans les réglages de votre appareil pour recevoir les prochains rappels.');
+        else setReminderMessage('Aucun rappel ne peut être programmé pour ce rendez-vous.');
+      }).catch(() => setReminderMessage('Le rappel n’a pas pu être programmé. Votre réservation reste confirmée.'));
+      setTicket(confirmed);
       setStep(3);
     } catch (error) { setError(bookingErrorMessage(error)); }
     finally { bookingPending.current = false; }
@@ -77,7 +90,8 @@ export function useBookingWorkflow() {
     services, shops, dates, appointmentTimes: APPOINTMENT_TIMES,
     modal, setModal, step, setStep, selected, setSelected, shop, setShop,
     name, setName, cin, setCin, phone, setPhone, time, setTime, day, setDay,
-    error, setError, tickets, ticket, setTicket, busy, help, setHelp,
+    error, setError, tickets, ticket, setTicket, busy, help, setHelp, reminderMessage,
+    unreadNotifications: tickets.filter(item => !readReferences.includes(item.reference)).length,
     open, validate, confirm, pdf,
   };
 }

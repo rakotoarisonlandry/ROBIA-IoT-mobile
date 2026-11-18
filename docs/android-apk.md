@@ -17,7 +17,7 @@ une clé de signature Android. Conserver cette clé dans EAS pour les prochains 
 télécharger le fichier `.apk`, puis autoriser son installation si Android le demande.
 
 Les boutiques et réservations sont des données de démonstration ; les réservations
-restent en mémoire pendant la session.
+restent enregistrées localement sur l’appareil.
 
 Vérifications avant construction :
 

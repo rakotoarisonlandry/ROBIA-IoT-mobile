@@ -14,7 +14,7 @@ src/
     location/          Position validée, filtre local et distances à vol d’oiseau
   infrastructure/      Implémentations techniques des interfaces
     catalog/           Catalogue de démonstration
-    tickets/           Stockage en mémoire de la session
+    tickets/           Stockage local des réservations de démonstration
     location/          Permissions et lecture GPS avec Expo Location
     pdf/               Génération PDF et export natif/web
     config/            Lecture de la configuration Expo

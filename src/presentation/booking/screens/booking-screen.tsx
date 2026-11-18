@@ -36,9 +36,7 @@ export default function BookingScreen() {
         {desktop && (
           <View style={s.sidebar}>
             <View style={s.brand}>
-              <View style={s.logoMark}>
-                <Icon name="spark" color="white" size={25} />
-              </View>
+              <Image source={require("../../../../assets/images/robia-iot-logo-v1.png")} style={{ width: 40, height: 40 }} resizeMode="contain" />
               <Text style={s.logo}>
                 robia<Text style={{ color: orange }}>.</Text>
               </Text>
@@ -101,7 +99,7 @@ export default function BookingScreen() {
                 },
               ]}
             >
-              {desktop ? tab : "robia."}
+              {desktop ? tab : "Robia IoT"}
             </Text>
             <View style={s.headerRight}>
               {width > 450 && (
@@ -114,12 +112,12 @@ export default function BookingScreen() {
                 </>
               )}
               <Pressable
-                onPress={() => setTab("Mes rendez-vous")}
-                accessibilityLabel="Mes rendez-vous"
+                onPress={() => router.push('/notifications')}
+                accessibilityLabel="Notifications"
                 style={{ padding: 4 }}
               >
                 <Icon name="bell" size={21} />
-                <View style={s.dot} />
+                {model.unreadNotifications > 0 && <View style={s.dot} />}
               </Pressable>
               <Pressable style={s.avatar} onPress={() => open()}>
                 <Text
@@ -137,7 +135,7 @@ export default function BookingScreen() {
             contentContainerStyle={[s.content, !wide && { padding: 20 }]}
           >
             <GuideSpot name={tab === 'Mes rendez-vous' ? 'appointments-list' : tab === 'Mes tickets' ? 'tickets-list' : 'page-heading'} order={0}
-              text={tab === 'Mes rendez-vous' ? 'Retrouvez ici les rendez-vous pris pendant votre session : boutique, date, horaire et services. La liste est vide avant votre première réservation.' : 'Vos tickets sont accessibles ici après confirmation. Ouvrez un ticket pour voir son QR code et télécharger ou partager le PDF.'} style={s.greeting}>
+              text={tab === 'Mes rendez-vous' ? 'Retrouvez ici vos rendez-vous de démonstration : boutique, date, horaire et services. Ils sont conservés sur cet appareil.' : 'Vos tickets sont accessibles ici après confirmation. Ouvrez un ticket pour voir son QR code et télécharger ou partager le PDF.'} style={s.greeting}>
               <View>
                 <Text style={s.eyebrow}>
                   MOINS D’ATTENTE, PLUS DE TEMPS POUR VOUS
