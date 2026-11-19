@@ -19,7 +19,7 @@ async function ticketHtml(ticket: TicketDocument): Promise<string> {
     <p>Conseiller : ${escapeHtml(ticket.agent)}</p><div style="width:180px">${qr}</div>
     <p>${escapeHtml(ticket.reference)}</p>
     <p>Présentez votre CIN originale et arrivez 10 minutes à l’avance.</p>
-    <p>Ticket de démonstration — disponibilité à confirmer en boutique.</p></body></html>`;
+    <p>Enregistré sur cet appareil, non transmis à la boutique. Rendez-vous à confirmer.</p></body></html>`;
 }
 
 export const ticketExporter: TicketExporter = {

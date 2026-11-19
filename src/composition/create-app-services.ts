@@ -6,6 +6,7 @@ import { createSearchShops } from "../application/location/map-use-cases";
 import { upcomingDays } from "../domain/booking/rules";
 import { demoCatalog } from "../infrastructure/catalog/demo-catalog";
 import { expoLocationGateway } from "../infrastructure/location/expo-location-gateway";
+import { estimateDrivingTime } from '../infrastructure/location/geoapify-travel';
 import { guidePreferences } from "../infrastructure/onboarding/async-storage-guide-preferences";
 import { ticketExporter } from "../infrastructure/pdf/ticket-exporter";
 import { demoReferences, systemClock } from "../infrastructure/system/runtime";
@@ -38,6 +39,7 @@ export function createAppServices() {
     openLocationSettings: () => expoLocationGateway.openSettings(),
     maps: {
       search: createSearchShops(demoCatalog),
+      estimateDrivingTime,
     },
     guidePreferences,
     scheduleBookingReminder,

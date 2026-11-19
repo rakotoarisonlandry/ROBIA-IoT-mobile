@@ -63,7 +63,7 @@ export async function createTicketPdf(ticket: PdfTicket): Promise<Uint8Array> {
   y -= 180;
   text(ticket.reference, 9);
   text('Présentez votre CIN originale et arrivez 10 minutes à l’avance.', 10);
-  text('Ticket de démonstration — disponibilité à confirmer en boutique.', 10);
+  text('Enregistré sur cet appareil, non transmis à la boutique. Rendez-vous à confirmer.', 10);
   return pdf.save();
 }
 

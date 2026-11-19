@@ -30,14 +30,14 @@ export default function NotificationsScreen() {
       <View style={{ flex: 1 }}><Text style={styles.heading}>Notifications</Text><Text style={styles.caption}>Toute votre actualité en un coup d’œil</Text></View>
     </View>
     <ScrollView contentContainerStyle={styles.content}>
-      <View style={styles.intro}><View style={styles.introIcon}><Icon name="bell" size={24} color="#ff6600" /></View><View style={{ flex: 1 }}><Text style={styles.introTitle}>Restez informé</Text><Text style={styles.caption}>Vos confirmations et rappels de rendez-vous sont ici.</Text></View></View>
+      <View style={styles.intro}><View style={styles.introIcon}><Icon name="bell" size={24} color="#ff6600" /></View><View style={{ flex: 1 }}><Text style={styles.introTitle}>Restez informé</Text><Text style={styles.caption}>Vos rendez-vous enregistrés et vos rappels sont ici.</Text></View></View>
       <Text style={styles.section}>VOS NOTIFICATIONS</Text>
-      {loading ? <Text style={styles.caption}>Chargement…</Text> : error ? <Text style={styles.caption}>Impossible de charger vos notifications. Réessayez plus tard.</Text> : tickets.length === 0 ? <View style={styles.empty}><Text style={styles.emptyTitle}>Rien à signaler pour le moment</Text><Text style={styles.caption}>Vos prochaines confirmations apparaîtront ici.</Text></View> : tickets.map(ticket => {
+      {loading ? <Text style={styles.caption}>Chargement…</Text> : error ? <Text style={styles.caption}>Impossible de charger vos notifications. Réessayez plus tard.</Text> : tickets.length === 0 ? <View style={styles.empty}><Text style={styles.emptyTitle}>Rien à signaler pour le moment</Text><Text style={styles.caption}>Vos prochains rendez-vous enregistrés apparaîtront ici.</Text></View> : tickets.map(ticket => {
         const date = new Date(ticket.appointmentAt);
         const shop = shops.find(item => item.id === ticket.shopId)?.name ?? 'votre boutique';
         return <Pressable key={ticket.reference} accessibilityRole="button" onPress={() => router.replace({ pathname: '/', params: { view: 'Mes rendez-vous' } })} style={({ pressed }) => [styles.card, pressed && { opacity: 0.7 }]}>
           <View style={styles.cardIcon}><Icon name="calendar" size={20} color="#ff6600" /></View>
-          <View style={{ flex: 1, gap: 5 }}><Text style={styles.cardTitle}>Rendez-vous confirmé</Text><Text style={styles.body}>{shop} · {date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à {date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</Text><Text style={styles.link}>Voir mon rendez-vous  ›</Text></View>
+          <View style={{ flex: 1, gap: 5 }}><Text style={styles.cardTitle}>Rendez-vous enregistré</Text><Text style={styles.body}>{shop} · {date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à {date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</Text><Text style={styles.link}>Voir mon rendez-vous  ›</Text></View>
         </Pressable>;
       })}
     </ScrollView>

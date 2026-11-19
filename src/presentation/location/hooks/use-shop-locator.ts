@@ -16,6 +16,10 @@ export function useShopLocator() {
     try { return { places: app.maps.search({ position, area: query }), error: '' }; }
     catch { return { places: [], error: 'Impossible de filtrer les boutiques. Utilisez un nom ou un quartier de moins de 120 caractères.' }; }
   }, [app, position, query]);
+  const allPlaces = useMemo(() => {
+    try { return app.maps.search({ position, area: '' }); }
+    catch { return []; }
+  }, [app, position]);
   useEffect(() => {
     mounted.current = true;
     return () => { mounted.current = false; };
@@ -26,6 +30,6 @@ export function useShopLocator() {
   const search = () => { setQuery(area); setSelectedId(null); setSettingsError(''); };
   const openSettings = () => { void app.openLocationSettings().catch(() => { if (mounted.current) setSettingsError('Autorisez la localisation dans les paramètres de votre appareil.'); }); };
   return { ...gps, position, isLocating: gps.status === 'locating', area, setArea,
-    selected, select, clearSelection: () => setSelectedId(null), places: result.places, mapError: result.error || settingsError,
+    selected, select, clearSelection: () => setSelectedId(null), places: result.places, allPlaces, mapError: result.error || settingsError,
     isSearching: false, search, openSettings };
 }

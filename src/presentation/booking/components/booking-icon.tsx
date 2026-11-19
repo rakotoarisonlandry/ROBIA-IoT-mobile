@@ -19,6 +19,7 @@ const icons: Record<string, string> = {
   close: "m6 6 12 12M6 18 18 6",
   spark: "m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z",
   search: "M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-2 6 6 6",
+  map: "M9 18 3 21V6l6-3 6 3 6-3v15l-6 3Zm0 0V3m6 18V6",
 };
 export function Icon({
   name,

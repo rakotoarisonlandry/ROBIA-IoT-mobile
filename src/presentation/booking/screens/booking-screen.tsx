@@ -135,10 +135,10 @@ export default function BookingScreen() {
             contentContainerStyle={[s.content, !wide && { padding: 20 }]}
           >
             <GuideSpot name={tab === 'Mes rendez-vous' ? 'appointments-list' : tab === 'Mes tickets' ? 'tickets-list' : 'page-heading'} order={0}
-              text={tab === 'Mes rendez-vous' ? 'Retrouvez ici vos rendez-vous de démonstration : boutique, date, horaire et services. Ils sont conservés sur cet appareil.' : 'Vos tickets sont accessibles ici après confirmation. Ouvrez un ticket pour voir son QR code et télécharger ou partager le PDF.'} style={s.greeting}>
+              text={tab === 'Mes rendez-vous' ? 'Retrouvez ici vos rendez-vous enregistrés sur cet appareil : boutique, date, horaire et services.' : 'Vos tickets sont accessibles ici après enregistrement. Ouvrez un ticket pour voir son QR code et télécharger ou partager le PDF.'} style={s.greeting}>
               <View>
                 <Text style={s.eyebrow}>
-                  MOINS D’ATTENTE, PLUS DE TEMPS POUR VOUS
+                  {tab === 'Les boutiques' ? 'PRÉPAREZ VOTRE VISITE' : 'MOINS D’ATTENTE, PLUS DE TEMPS POUR VOUS'}
                 </Text>
                 <Text
                   style={[
@@ -153,7 +153,7 @@ export default function BookingScreen() {
                 <Text style={s.subtitle}>
                   {tab === "Accueil"
                     ? "Vos services Orange vous attendent. Choisissez où et quand."
-                    : "Préparez votre visite et retrouvez vos réservations."}
+                    : tab === 'Les boutiques' ? 'Trouvez une boutique, consultez la carte et réservez votre visite.' : "Préparez votre visite et retrouvez vos réservations."}
                 </Text>
               </View>
               {wide && (
@@ -188,7 +188,7 @@ export default function BookingScreen() {
                       {wide ? "\n" : " "}et rendez-vous en boutique l’esprit
                       tranquille.
                     </Text>
-                    <GuideSpot name="home-reserve" order={1} text="Commencez ici pour choisir votre service, votre boutique et un horaire. Votre ticket QR et PDF sera disponible après confirmation." style={{ alignSelf: 'flex-start' }}><Pressable onPress={() => open()} style={s.heroButton}>
+                    <GuideSpot name="home-reserve" order={1} text="Commencez ici pour choisir votre service, votre boutique et un horaire. Votre ticket QR et PDF sera disponible après enregistrement." style={{ alignSelf: 'flex-start' }}><Pressable onPress={() => open()} style={s.heroButton}>
                       <Icon name="calendar" size={18} />
                       <Text style={s.heroButtonText}>
                         Prendre un rendez-vous
@@ -213,7 +213,7 @@ export default function BookingScreen() {
                           </Text>
                           <View style={s.confirmed}>
                             <Text style={{ fontSize: 8, color: "#428661" }}>
-                              ✓ Confirmé
+                              ✓ Enregistré
                             </Text>
                           </View>
                         </View>
@@ -318,7 +318,7 @@ export default function BookingScreen() {
                 <View
                   style={[s.shopGrid, !wide && { flexDirection: "column" }]}
                 >
-                  {shops.map(
+                  {shops.slice(0, 4).map(
                     (v, i) =>
                     (
                       <Pressable
@@ -358,7 +358,7 @@ export default function BookingScreen() {
                           <View style={s.shopFooter}>
                             <Icon name="calendar" size={13} color="#6f997e" />
                             <Text style={s.available}>
-                              Créneaux de démonstration
+                              Disponibilités à confirmer
                             </Text>
                             <Text style={s.shopRating}>
                               ★{" "}
@@ -375,7 +375,7 @@ export default function BookingScreen() {
                 <View style={s.demoNote}>
                   <Icon name="pin" color="#aaa" size={12} />
                   <Text style={s.noteText}>
-                    Boutiques et créneaux de démonstration · Adresses à confirmer avant votre visite.
+                    Adresses et disponibilités à confirmer avant votre visite.
                   </Text>
                 </View>
               </>
@@ -413,7 +413,7 @@ export default function BookingScreen() {
                           {t.services.map((i) => services[i].name).join(" · ")}
                         </Text>
                         <Text style={s.available}>
-                          Réservation de démonstration
+                          Enregistré sur cet appareil · Non transmis à la boutique
                         </Text>
                       </View>
                       <Pressable

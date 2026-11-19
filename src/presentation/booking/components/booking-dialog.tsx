@@ -1,6 +1,6 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { router } from 'expo-router';
-import { Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { GuideSpot, GuideViewport, type GuideScrollHandle } from '../../onboarding/guide-spot';
 import { useGuideRuntime } from '../../onboarding/guide-runtime';
 import { BRAND_ORANGE as orange } from '../../shared/brand';
@@ -13,6 +13,12 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
   const scrollRef = useRef<GuideScrollHandle>(null);
   const { active: guideActive } = useGuideRuntime();
   const { modal, setModal, step, name, setName, cin, setCin, phone, setPhone, validate, setStep, services, setSelected, selected, shops, setShop, shop, setError, dates, setDay, day, appointmentTimes, setTime, time, confirm, ticket, busy, pdf, error } = model;
+  const { checkTravel, cancelTravelCheck } = model;
+  useEffect(() => {
+    if (!modal || step !== 2 || guideActive) return;
+    void checkTravel();
+    return cancelTravelCheck;
+  }, [modal, step, guideActive, shop, checkTravel, cancelTravelCheck]);
   return (<GuideViewport scrollRef={scrollRef}><Modal
     visible={modal}
     transparent
@@ -43,7 +49,7 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
                     "Faisons connaissance",
                     "Votre visite en boutique",
                     "Choisissez votre créneau",
-                    "Vous avez votre place !",
+                    "Votre ticket est prêt",
                   ][step]
                 }
               </Text>
@@ -161,6 +167,7 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
                   )}
                 </Pressable>
               ))}
+              <Text style={s.small}>À l’étape suivante, Robia vérifiera automatiquement le trajet avec votre position si vous l’autorisez. La position sera transmise à Geoapify pour ce calcul.</Text>
               <Button
                 label="Choisir mon horaire"
                 onPress={() => {
@@ -234,18 +241,35 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
                   Conseiller : {shops[shop].agent}
                 </Text>
               </View>
+              <View style={{ backgroundColor: '#fff8f2', borderRadius: 14, padding: 16, gap: 10 }}>
+                <Text style={s.shopName}>Votre trajet</Text>
+                <Text style={s.small}>Le temps en voiture est vérifié automatiquement depuis votre position actuelle, avec 15 minutes de marge. La position est transmise à Geoapify pour ce calcul.</Text>
+                {model.currentTravel && model.travelAssessment ? <>
+                  <Text style={{ color: model.travelAssessment.isTight ? '#a54422' : '#427257', fontWeight: '700', lineHeight: 20 }}>
+                    {model.travelAssessment.isTight ? 'Ce créneau semble trop proche si vous partez maintenant.' : 'Le trajet semble possible si vous partez à temps.'}
+                  </Text>
+                  <Text style={s.small}>Trajet estimé : {Math.ceil(model.currentTravel.seconds / 60)} min · {(model.currentTravel.meters / 1000).toFixed(1)} km. {model.travelAssessment.isTight ? 'Arrivée estimée avec marge : ' : 'Départ conseillé au plus tard : '}{(model.travelAssessment.isTight ? model.travelAssessment.earliestArrival : model.travelAssessment.latestDeparture).toLocaleString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.</Text>
+                  <Text style={s.small}>Estimation indicative, sans garantie sur le trafic ou l’état des routes.</Text>
+                  {model.travelAssessment.isTight && <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: model.riskAccepted }} onPress={() => model.setRiskAccepted(!model.riskAccepted)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 }}><View style={{ width: 22, height: 22, borderWidth: 1, borderColor: orange, borderRadius: 5, backgroundColor: model.riskAccepted ? orange : 'white', alignItems: 'center', justifyContent: 'center' }}>{model.riskAccepted && <Icon name="check" size={15} color="white" />}</View><Text style={[s.small, { flex: 1, color: '#555' }]}>J’ai prévu mon déplacement et souhaite garder ce créneau.</Text></Pressable>}
+                </> : <>{!model.checkingTravel && <><Text style={s.small}>Trajet non vérifié pour cette boutique.</Text><Pressable accessibilityRole="checkbox" accessibilityState={{ checked: model.unverifiedAccepted }} onPress={() => model.setUnverifiedAccepted(!model.unverifiedAccepted)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 }}><View style={{ width: 22, height: 22, borderWidth: 1, borderColor: orange, borderRadius: 5, backgroundColor: model.unverifiedAccepted ? orange : 'white', alignItems: 'center', justifyContent: 'center' }}>{model.unverifiedAccepted && <Icon name="check" size={15} color="white" />}</View><Text style={[s.small, { flex: 1, color: '#555' }]}>Je poursuis sans vérifier le trajet.</Text></Pressable></>}</>}
+                {!!model.travelError && <Text accessibilityRole="alert" style={s.error}>{model.travelError}</Text>}
+                <Pressable accessibilityRole="button" disabled={model.checkingTravel} onPress={() => void model.checkTravel()} style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  {model.checkingTravel ? <ActivityIndicator size="small" color={orange} /> : <Icon name="pin" size={17} color={orange} />}
+                  <Text style={{ color: orange, fontWeight: '700' }}>{model.checkingTravel ? 'Vérification du trajet…' : model.currentTravel ? 'Actualiser l’estimation' : 'Réessayer la vérification'}</Text>
+                </Pressable>
+              </View>
               <Text style={s.small}>
-                Mode démonstration : ces horaires ne sont pas synchronisés
-                avec la boutique.
+                Les horaires ne sont pas synchronisés avec la boutique.
+                Vérifiez les disponibilités auprès de celle-ci.
               </Text>
-              <Button label="Confirmer mon rendez-vous" disabled={guideActive} onPress={confirm} />
+              <Button label="Enregistrer mon rendez-vous" disabled={guideActive || model.checkingTravel} onPress={confirm} />
             </View>
           )}
           {step === 3 && ticket && (
             <View style={s.form}>
               <View style={s.finalTicket}>
                 <View style={s.confirmed}>
-                  <Text style={s.available}>✓ Ticket de démonstration</Text>
+                  <Text style={s.available}>✓ Enregistré sur cet appareil</Text>
                 </View>
                 <Text style={s.ticketId}>{ticket.id}</Text>
                 <Text style={s.shopName}>{shops[ticket.shop].name}</Text>
@@ -262,6 +286,7 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
                   Conseiller : {shops[ticket.shop].agent}
                 </Text>
               </View>
+              <Text style={[s.small, { textAlign: 'center' }]}>Ce ticket n’a pas été transmis à la boutique. Confirmez votre rendez-vous auprès de celle-ci.</Text>
               <Text style={[s.small, { textAlign: "center" }]}>
                 Présentez ce QR code et votre CIN originale.{"\n"}Pensez à
                 arriver 10 minutes à l’avance.

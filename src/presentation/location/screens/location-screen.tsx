@@ -1,339 +1,62 @@
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState, type ComponentRef } from "react";
-import {
-  ActivityIndicator,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  useWindowDimensions,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { BookingDialog } from "../../booking/components/booking-dialog";
-import { useBookingWorkflow } from "../../booking/hooks/use-booking-workflow";
-import { LocationIcon } from "../components/location-icon";
-import NearbyMap from "../components/nearby-map";
-import { useShopLocator } from "../hooks/use-shop-locator";
-import { distanceLabel } from "../models/route-labels";
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Icon } from '../../booking/components/booking-icon';
+import type { MapPlace } from '../../../domain/location/entities';
+import { LocationIcon } from '../components/location-icon';
+import NearbyMap from '../components/nearby-map';
+import { useShopLocator } from '../hooks/use-shop-locator';
 
 export default function LocationScreen() {
   const { shopId, itineraire } = useLocalSearchParams<{ shopId?: string; itineraire?: string }>();
-  const { height, width } = useWindowDimensions();
-  const model = useBookingWorkflow();
+  const insets = useSafeAreaInsets();
   const locator = useShopLocator();
-  const [routeShopId, setRouteShopId] = useState<string | null>(null);
+  const { selected, select, clearSelection, places, allPlaces, position, locate, isLocating, message, status, canAskAgain, openSettings, area, setArea } = locator;
+  const [mapHeight, setMapHeight] = useState(0);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [routeShopId, setRouteShopId] = useState<string | null>(() => itineraire === '1' ? shopId ?? null : null);
   const [routeRevision, setRouteRevision] = useState(0);
-  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
-  const {
-    selected,
-    select,
-    places,
-    position,
-    locate,
-    isLocating,
-    message,
-    status,
-    canAskAgain,
-    openSettings,
-    area,
-    setArea,
-    search,
-  } = locator;
+  const initializedShop = useRef<string | null>(null);
+
   useEffect(() => {
-    if (shopId && !selected) {
-      const place = places.find((item) => item.shopId === shopId);
-      if (place) select(place);
+    if (shopId && initializedShop.current !== shopId) {
+      const place = allPlaces.find(item => item.shopId === shopId);
+      if (place) { initializedShop.current = shopId; select(place); }
     }
-  }, [shopId, selected, places, select]);
-  const bookingIndex = selected
-    ? model.shops.findIndex((shop) => shop.id === selected.shopId)
-    : -1;
-  return (
-    <SafeAreaView style={s.root} edges={["top", "left", "right", "bottom"]}>
-      <View style={s.header}>
-        <Pressable
-          onPress={() =>
-            router.canGoBack() ? router.back() : router.replace("/")
-          }
-          accessibilityRole="button"
-          accessibilityLabel="Retour"
-          style={s.back}
-        >
-          <Text style={s.backText}>‹</Text>
-        </Pressable>
-        <View style={{ flex: 1 }}>
-          <Text style={s.title}>Localisation</Text>
-          <Text style={s.subtitle}>Trouvez votre boutique sur la carte</Text>
-        </View>
+  }, [shopId, allPlaces, select]);
+
+  const choose = (place: MapPlace) => {
+    Keyboard.dismiss(); setSearchOpen(false); setArea(''); setRouteShopId(null); select(place);
+  };
+  const showRoute = !!selected && selected.shopId === routeShopId;
+
+  return <View style={s.root} onLayout={event => setMapHeight(event.nativeEvent.layout.height)}>
+    {mapHeight > 0 && <NearbyMap key={routeRevision} height={mapHeight} position={position} places={allPlaces} selected={selected} onSelect={choose} showRoute={showRoute} />}
+    <SafeAreaView edges={['top', 'left', 'right']} pointerEvents="box-none" style={s.top}>
+      <View style={s.searchBar}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Retour" onPress={() => router.canGoBack() ? router.back() : router.replace('/')} style={s.back}><Text style={s.backText}>‹</Text></Pressable>
+        <Icon name="search" size={19} color="#777" />
+        <TextInput style={s.input} value={area} onFocus={() => setSearchOpen(true)} onChangeText={value => { setRouteShopId(null); setArea(value); setSearchOpen(true); }} placeholder="Rechercher une boutique" placeholderTextColor="#888" accessibilityLabel="Rechercher une boutique" returnKeyType="search" onSubmitEditing={() => { if (places.length === 1) choose(places[0]); else Keyboard.dismiss(); }} maxLength={120} />
+        {(searchOpen || !!area) && <Pressable accessibilityRole="button" accessibilityLabel="Fermer la recherche" onPress={() => { Keyboard.dismiss(); setSearchOpen(false); if (area) setArea(''); }} style={s.close}><Text style={s.closeText}>×</Text></Pressable>}
       </View>
-      <ScrollView
-        ref={scrollRef}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={s.content}
-      >
-        <View style={s.mapWrap}>
-          <NearbyMap
-            key={routeRevision}
-            height={Math.max(350, Math.min(height * 0.58, 650))}
-            position={position}
-            places={places}
-            selected={selected}
-            onSelect={(place) => {
-              setRouteShopId(null);
-              select(place);
-            }}
-            showRoute={!!selected && (selected.shopId === routeShopId || (itineraire === '1' && selected.shopId === shopId))}
-          />
-        </View>
-        <Pressable
-          onPress={() => void locate()}
-          disabled={isLocating}
-          accessibilityRole="button"
-          style={s.locate}
-        >
-          {isLocating ? (
-            <ActivityIndicator size="small" color="#ed6100" />
-          ) : (
-            <LocationIcon color="#ed6100" size={19} />
-          )}
-          <Text style={s.locateText}>
-            {isLocating
-              ? "Recherche de votre position…"
-              : position
-              ? "Actualiser ma position"
-              : "Me localiser"}
-          </Text>
-        </Pressable>
-        {!!message && (
-          <View style={s.notice}>
-            <Text accessibilityRole="alert" style={s.body}>
-              {message}
-            </Text>
-            {status === "denied" &&
-              !canAskAgain &&
-              (Platform.OS === "web" ? (
-                <Text style={s.body}>
-                  Autorisez la localisation dans votre navigateur.
-                </Text>
-              ) : (
-                <Pressable onPress={openSettings}>
-                  <Text style={s.link}>Ouvrir les paramètres</Text>
-                </Pressable>
-              ))}
-          </View>
-        )}
-        <View style={s.section}>
-          <Text style={s.sectionTitle}>Choisir une boutique</Text>
-          <Text style={s.subtitle}>Recherchez par nom ou quartier.</Text>
-          <View style={s.search}>
-            <TextInput
-              value={area}
-              onChangeText={setArea}
-              onSubmitEditing={search}
-              maxLength={120}
-              placeholder="Nom ou quartier"
-              placeholderTextColor="#888"
-              accessibilityLabel="Rechercher une boutique"
-              returnKeyType="search"
-              style={s.input}
-            />
-            <Pressable
-              onPress={search}
-              accessibilityRole="button"
-              style={s.searchButton}
-            >
-              <Text style={s.searchText}>Rechercher</Text>
-            </Pressable>
-          </View>
-        </View>
-        {selected && (
-          <View style={s.selected}>
-            <Text style={s.label}>
-              BOUTIQUE SÉLECTIONNÉE{selected.isDemo ? " · DÉMONSTRATION" : ""}
-            </Text>
-            <Text style={s.cardTitle}>{selected.name}</Text>
-            <Text style={s.body}>{selected.address}</Text>
-            {selected.straightLineMeters != null && (
-              <Text style={s.link}>
-                {distanceLabel(selected.straightLineMeters)} à vol d’oiseau
-              </Text>
-            )}
-            {!selected.coordinates && (
-              <Text style={s.body}>Position sur la carte non renseignée.</Text>
-            )}
-            {selected.coordinates &&
-              (position ? (
-                <Pressable
-                  onPress={() => {
-                    setRouteShopId(selected.shopId);
-                    setRouteRevision((value) => value + 1);
-                    scrollRef.current?.scrollTo({ y: 0, animated: true });
-                  }}
-                  accessibilityRole="button"
-                  style={s.primary}
-                >
-                  <Text style={s.primaryText}>
-                    Afficher l’itinéraire et la distance
-                  </Text>
-                </Pressable>
-              ) : (
-                <Text style={s.body}>
-                  Localisez-vous pour calculer le trajet jusqu’à cette boutique.
-                </Text>
-              ))}
-            {bookingIndex >= 0 && (
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => model.open(undefined, bookingIndex)}
-                style={s.secondary}
-              >
-                <Text style={s.link}>
-                  Réserver dans cette boutique{selected.isDemo ? " (démo)" : ""}
-                </Text>
-              </Pressable>
-            )}
-          </View>
-        )}
-        {locator.mapError ? (
-          <Text accessibilityRole="alert" style={s.body}>
-            {locator.mapError}
-          </Text>
-        ) : null}
-        {!places.length && (
-          <Text style={s.body}>Aucune boutique trouvée dans le catalogue.</Text>
-        )}
-        {places.map((place) => (
-          <Pressable
-            key={place.shopId}
-            onPress={() => {
-              setRouteShopId(null);
-              select(place);
-            }}
-            accessibilityRole="button"
-            accessibilityState={{ selected: place.shopId === selected?.shopId }}
-            style={[s.card, place.shopId === selected?.shopId && s.cardActive]}
-          >
-            <View style={{ flex: 1, gap: 4 }}>
-              <Text style={s.cardTitle}>{place.name}</Text>
-              <Text style={s.body}>{place.address}</Text>
-              <Text style={s.small}>
-                {place.isDemo ? "Démonstration · " : ""}
-                {place.coordinates
-                  ? "Afficher sur la carte"
-                  : "Position non renseignée"}
-              </Text>
-            </View>
-            {place.straightLineMeters != null && (
-              <Text style={s.link}>
-                {distanceLabel(place.straightLineMeters)}
-              </Text>
-            )}
-          </Pressable>
-        ))}
-      </ScrollView>
-      <BookingDialog model={model} wide={width >= 730} />
+      {searchOpen && <View style={s.results}><Text style={s.resultsTitle}>{area.trim() ? 'RÉSULTATS' : 'BOUTIQUES DU CATALOGUE'}</Text><ScrollView keyboardShouldPersistTaps="handled" style={s.resultsList}>
+        {places.length ? places.map(place => <Pressable key={place.shopId} accessibilityRole="button" onPress={() => choose(place)} style={s.result}><View style={s.resultIcon}><Icon name="shop" color="#e65b00" size={19} /></View><View style={s.resultCopy}><Text style={s.resultName}>{place.name}</Text><Text style={s.resultAddress} numberOfLines={2}>{place.address}</Text>{!place.coordinates && <Text style={s.resultNote}>Position non renseignée</Text>}</View></Pressable>) : <Text style={s.empty}>Aucune boutique trouvée. Essayez un autre nom.</Text>}
+      </ScrollView></View>}
     </SafeAreaView>
-  );
+    {!searchOpen && <View pointerEvents="box-none" style={[s.bottom, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+      <View style={s.bottomInner}>
+        {!!message && <View style={s.notice}><Text accessibilityRole="alert" style={s.noticeText}>{message}</Text>{status === 'denied' && !canAskAgain && (Platform.OS === 'web' ? <Text style={s.noticeText}>Autorisez la localisation dans le navigateur.</Text> : <Pressable onPress={openSettings}><Text style={s.link}>Ouvrir les paramètres</Text></Pressable>)}</View>}
+        {selected ? <View style={s.sheet}><View style={s.sheetHead}><View style={s.sheetIcon}><Icon name="shop" size={20} color="#e65b00" /></View><View style={s.sheetCopy}><Text style={s.sheetLabel}>VOTRE DESTINATION</Text><Text style={s.sheetTitle} numberOfLines={1}>{selected.name}</Text><Text style={s.sheetAddress} numberOfLines={1}>{selected.address}</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Fermer la destination" onPress={() => { setRouteShopId(null); clearSelection(); }} style={s.close}><Text style={s.closeText}>×</Text></Pressable></View>
+          {selected.isDemo && selected.coordinates && <Text style={s.helper}>Emplacement à confirmer avant votre visite.</Text>}
+          {!selected.coordinates ? <Text style={s.helper}>Itinéraire indisponible : les coordonnées de cette boutique ne sont pas renseignées.</Text> : <Pressable accessibilityRole="button" disabled={isLocating} onPress={() => { if (!position) { setRouteShopId(selected.shopId); void locate(); } else { setRouteShopId(selected.shopId); setRouteRevision(value => value + 1); } }} style={s.primary}>{isLocating ? <ActivityIndicator size="small" color="white" /> : <Icon name="arrow" size={18} color="white" />}<Text style={s.primaryText}>{isLocating ? 'Recherche de votre position…' : position ? showRoute ? 'Recalculer le trajet' : 'Afficher l’itinéraire' : 'Me localiser et calculer le trajet'}</Text></Pressable>}
+        </View> : <View style={s.emptySheet}><View style={s.sheetCopy}><Text style={s.sheetTitle}>Où souhaitez-vous aller ?</Text><Text style={s.sheetAddress}>Recherchez une boutique dans le catalogue.</Text></View><Pressable onPress={() => setSearchOpen(true)} accessibilityRole="button" style={s.choose}><Text style={s.chooseText}>Choisir</Text></Pressable></View>}
+      </View>
+    </View>}
+    {!searchOpen && <Pressable accessibilityRole="button" accessibilityLabel="Actualiser ma position" disabled={isLocating} onPress={() => void locate()} style={[s.floatingLocate, { bottom: Math.max(insets.bottom, 12) + (selected ? 205 : 105) }]}>{isLocating ? <ActivityIndicator size="small" color="#e65b00" /> : <LocationIcon size={21} />}</Pressable>}
+  </View>;
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#f8f9fb" },
-  header: {
-    backgroundColor: "white",
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    borderBottomWidth: 1,
-    borderColor: "#eee",
-  },
-  back: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: "#f5f5f5",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backText: { fontSize: 30, lineHeight: 34, color: "#252525" },
-  title: { fontSize: 22, fontWeight: "800", color: "#222" },
-  subtitle: { color: "#777", fontSize: 13, lineHeight: 19 },
-  content: {
-    padding: 16,
-    gap: 14,
-    width: "100%",
-    maxWidth: 900,
-    alignSelf: "center",
-    paddingBottom: 32,
-  },
-  mapWrap: { width: "100%" },
-  locate: {
-    minHeight: 48,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-    gap: 8,
-    backgroundColor: "#fff0e5",
-    borderRadius: 14,
-  },
-  locateText: { color: "#df5c00", fontWeight: "700" },
-  notice: { backgroundColor: "#fff3e8", padding: 14, borderRadius: 12, gap: 8 },
-  section: { gap: 7, marginTop: 5 },
-  sectionTitle: { fontSize: 18, fontWeight: "800", color: "#222" },
-  search: { flexDirection: "row", gap: 8, marginTop: 4 },
-  input: {
-    flex: 1,
-    minWidth: 0,
-    minHeight: 48,
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "#e8e8e8",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    color: "#222",
-  },
-  searchButton: {
-    justifyContent: "center",
-    paddingHorizontal: 15,
-    borderRadius: 12,
-    backgroundColor: "#262626",
-  },
-  searchText: { color: "white", fontWeight: "700", fontSize: 12 },
-  selected: {
-    backgroundColor: "#fff4eb",
-    borderRadius: 16,
-    padding: 18,
-    gap: 9,
-  },
-  label: {
-    fontSize: 10,
-    color: "#e3620b",
-    letterSpacing: 1,
-    fontWeight: "800",
-  },
-  card: {
-    backgroundColor: "white",
-    borderRadius: 15,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#eee",
-    flexDirection: "row",
-    gap: 8,
-  },
-  cardActive: { borderColor: "#ff6600" },
-  cardTitle: { fontSize: 15, fontWeight: "700", color: "#222" },
-  body: { color: "#666", fontSize: 13, lineHeight: 20 },
-  small: { color: "#999", fontSize: 11 },
-  link: { color: "#e45e00", fontWeight: "700", fontSize: 12 },
-  primary: {
-    backgroundColor: "#ff6600",
-    borderRadius: 12,
-    padding: 14,
-    alignItems: "center",
-  },
-  primaryText: { color: "white", fontWeight: "700" },
-  secondary: { paddingVertical: 8 },
+  root: { flex: 1, backgroundColor: '#f3f3f3' }, top: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: 12, zIndex: 5 }, searchBar: { minHeight: 56, marginTop: 8, backgroundColor: 'white', borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 6, elevation: 4, shadowColor: '#000', shadowOpacity: .12, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } }, back: { width: 46, height: 52, alignItems: 'center', justifyContent: 'center' }, backText: { color: '#252525', fontSize: 30, lineHeight: 34 }, input: { flex: 1, minWidth: 0, height: 52, color: '#222', fontSize: 14 }, close: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' }, closeText: { fontSize: 24, color: '#777' }, results: { marginTop: 8, backgroundColor: 'white', borderRadius: 16, paddingTop: 14, elevation: 4, shadowColor: '#000', shadowOpacity: .12, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } }, resultsTitle: { color: '#999', fontSize: 10, fontWeight: '800', letterSpacing: 1, paddingHorizontal: 16, paddingBottom: 8 }, resultsList: { maxHeight: 260 }, result: { flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingVertical: 12, alignItems: 'center', borderTopWidth: 1, borderColor: '#f3f3f3' }, resultIcon: { width: 40, height: 40, borderRadius: 13, backgroundColor: '#fff0e5', alignItems: 'center', justifyContent: 'center' }, resultCopy: { flex: 1, minWidth: 0, gap: 2 }, resultName: { fontSize: 14, fontWeight: '700', color: '#222' }, resultAddress: { fontSize: 12, lineHeight: 17, color: '#777' }, resultNote: { fontSize: 11, color: '#9a8b80' }, empty: { padding: 16, color: '#777', fontSize: 13 }, bottom: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 12 }, bottomInner: { width: '100%', maxWidth: 600, alignSelf: 'center', gap: 8 }, notice: { backgroundColor: '#fff3e8', padding: 12, borderRadius: 12, gap: 5 }, noticeText: { color: '#744c30', fontSize: 12, lineHeight: 18 }, link: { color: '#df5d00', fontSize: 12, fontWeight: '700' }, sheet: { backgroundColor: 'white', padding: 14, borderRadius: 18, gap: 10, elevation: 5, shadowColor: '#000', shadowOpacity: .14, shadowRadius: 12, shadowOffset: { width: 0, height: 3 } }, sheetHead: { flexDirection: 'row', alignItems: 'center', gap: 10 }, sheetIcon: { width: 44, height: 44, borderRadius: 14, backgroundColor: '#fff0e5', alignItems: 'center', justifyContent: 'center' }, sheetCopy: { flex: 1, minWidth: 0, gap: 2 }, sheetLabel: { fontSize: 10, letterSpacing: .7, fontWeight: '800', color: '#d85b00' }, sheetTitle: { fontSize: 15, fontWeight: '800', color: '#222' }, sheetAddress: { fontSize: 12, color: '#777' }, helper: { color: '#777', fontSize: 12, lineHeight: 18 }, primary: { backgroundColor: '#ff6600', borderRadius: 12, minHeight: 46, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: 8 }, primaryText: { color: 'white', fontWeight: '700', fontSize: 13 }, emptySheet: { backgroundColor: 'white', padding: 16, borderRadius: 18, flexDirection: 'row', alignItems: 'center', gap: 12, elevation: 5, shadowColor: '#000', shadowOpacity: .14, shadowRadius: 12, shadowOffset: { width: 0, height: 3 } }, choose: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, borderRadius: 12, backgroundColor: '#fff0e5' }, chooseText: { color: '#df5d00', fontWeight: '700' }, floatingLocate: { position: 'absolute', right: 16, width: 48, height: 48, borderRadius: 24, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center', elevation: 5, shadowColor: '#000', shadowOpacity: .14, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
 });

@@ -1,6 +1,10 @@
 # Carte Geoapify dans Robia
 
-La carte interactive utilise les tuiles Geoapify, les données OpenStreetMap et Leaflet dans une WebView native ou une iframe sur le web. La recherche des boutiques reste locale et la réservation utilise le catalogue Robia existant. Les boutiques sans coordonnées ne reçoivent pas de repère inventé. Le catalogue actuel est une démonstration : renseigner des coordonnées vérifiées avant de proposer des itinéraires réels.
+La carte interactive utilise les tuiles Geoapify, les données OpenStreetMap et Leaflet dans une WebView native ou une iframe sur le web. La recherche des boutiques reste locale et la réservation utilise le catalogue Robia existant. Les boutiques sans coordonnées ne reçoivent pas de repère inventé. Le catalogue actuel est une démonstration.
+
+La boutique « Orange Fianarantsoa » utilise le point OpenStreetMap [4322859589](https://www.openstreetmap.org/node/4322859589), identifié par Geoapify sur la RN7 à Antarandolo, près de l’hôtel Mini Croq. Cette position est un repère cartographique à confirmer sur place ; les rendez-vous restent fictifs et ne sont pas transmis à Orange.
+
+Des commerces de téléphonie Orange issus d’OpenStreetMap ont également été ajoutés pour Antananarivo, Mahajanga et Toliara. Leurs identifiants OSM figurent dans le catalogue. Ils n’ont pas été confirmés par Orange, leur activité et leur adresse peuvent changer, et la liste ne couvre pas toutes les boutiques de Madagascar. Ne pas considérer ces points comme des disponibilités de rendez-vous réelles.
 
 ## Configuration
 

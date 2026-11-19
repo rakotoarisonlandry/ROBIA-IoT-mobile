@@ -43,4 +43,9 @@ export const locatorStyles = StyleSheet.create({
   bookingButton: { minHeight: 44, paddingHorizontal: 15, justifyContent: 'center', alignItems: 'center', borderRadius: 10, backgroundColor: '#252525', flexGrow: 1 },
   bookingText: { fontSize: 12, fontWeight: '700', color: 'white' },
   empty: { backgroundColor: 'white', padding: 22, borderRadius: 16, gap: 8 },
+  pagination: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  pageButton: { minHeight: 44, borderRadius: 10, paddingHorizontal: 12, justifyContent: 'center', backgroundColor: '#fff0e5' },
+  pageDisabled: { opacity: 0.4 },
+  pageText: { fontSize: 12, fontWeight: '700', color: '#d85b00' },
+  pageLabel: { color: '#777', fontSize: 12 },
 });

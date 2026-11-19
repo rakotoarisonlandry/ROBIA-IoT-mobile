@@ -31,8 +31,13 @@ const { demoCatalog } = require('../src/infrastructure/catalog/demo-catalog.ts')
     results[0].coordinates.latitude = 10;
     assert.equal(near.coordinates.latitude, position.latitude, 'Search results must not mutate the catalogue');
     const demos = await createSearchShops(demoCatalog)({ position, area: '' });
-    assert.equal(demos.length, 3);
-    assert.ok(demos.every(p => p.isDemo && !p.coordinates && p.straightLineMeters == null), 'No invented locations or distances for demo shops');
+    assert.equal(demos.length, 12);
+    const fianarantsoa = (await createSearchShops(demoCatalog)({ position: { latitude: -21.45, longitude: 47.09 }, area: 'fianarantsoa' }))[0];
+    assert.equal(fianarantsoa.shopId, 'fianarantsoa-antarandolo');
+    assert.ok(fianarantsoa.isDemo && fianarantsoa.coordinates && fianarantsoa.straightLineMeters > 0);
+    assert.ok(demos.every(p => p.isDemo));
+    assert.ok(demos.filter(p => !p.coordinates).every(p => p.straightLineMeters == null), 'Unlocated shops must not have invented distances');
+    assert.ok((await createSearchShops(demoCatalog)({ position: null, area: 'mahajanga' })).length >= 1);
   } finally { global.fetch = originalFetch; }
   console.log('Minimal maps: local filtering, distances, missing coordinates, demo labels and zero HTTP requests — OK');
 })().catch(error => { console.error(error); process.exitCode = 1; });

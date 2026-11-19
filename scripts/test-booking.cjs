@@ -5,6 +5,15 @@ const { createExportTicket } = require('../src/application/booking/export-ticket
 const { createLocateUser } = require('../src/application/location/locate-user.ts');
 const { InMemoryTicketRepository } = require('../src/infrastructure/tickets/in-memory-ticket-repository.ts');
 const { demoCatalog } = require('../src/infrastructure/catalog/demo-catalog.ts');
+const { assessTravel } = require('../src/domain/booking/travel-feasibility.ts');
+
+const departure = new Date('2026-01-01T18:00:00Z');
+const appointment = new Date('2026-01-02T08:00:00Z');
+assert.equal(assessTravel(appointment, departure, 15 * 3600).isTight, true, 'A 15-hour trip cannot fit into 14 hours');
+assert.equal(assessTravel(appointment, departure, 13 * 3600).isTight, false, 'A 13-hour trip plus buffer fits into 14 hours');
+assert.equal(assessTravel(appointment, departure, 13 * 3600 + 45 * 60).isTight, false, 'Arrival exactly at the limit is allowed');
+assert.equal(assessTravel(appointment, departure, 13 * 3600 + 45 * 60 + 1).isTight, true, 'One second beyond the limit is tight');
+assert.throws(() => assessTravel(appointment, departure, NaN));
 const { APPOINTMENT_TIMES } = require('../src/domain/booking/rules.ts');
 const { createTicketPdf } = require('../src/infrastructure/pdf/ticket-pdf.ts');
 const { PDFDocument } = require('pdf-lib');

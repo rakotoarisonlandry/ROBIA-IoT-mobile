@@ -28,8 +28,7 @@ export function HelpDialog({ visible, onClose }: { visible: boolean; onClose: ()
           avec votre CIN.
         </Text>
         <Text style={s.small}>
-          Cette version utilise des données de démonstration. Les
-          réservations sont conservées sur cet appareil. La
+          Les rendez-vous sont conservés sur cet appareil et ne sont pas transmis à la boutique. La
           connexion au système des agents commerciaux sera nécessaire pour
           confirmer les disponibilités et attribuer les numéros de file.
         </Text>
