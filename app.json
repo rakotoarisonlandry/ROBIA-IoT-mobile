@@ -38,7 +38,8 @@
         {
           "backgroundColor": "#ffffff",
           "image": "./assets/images/robia-iot-logo-v1.png",
-          "imageWidth": 180
+          "imageWidth": 180,
+          "resizeMode": "contain"
         }
       ],
       "expo-sharing",

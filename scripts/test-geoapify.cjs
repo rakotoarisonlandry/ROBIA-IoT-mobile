@@ -1,0 +1,17 @@
+const assert = require('node:assert/strict');
+require('./test-support/register-typescript.cjs');
+const { geoapifyMapHtml } = require('../src/presentation/location/models/geoapify-map.ts');
+const position = { latitude: -18.9, longitude: 47.5 };
+const shop = { shopId: 'shop', name: '</script><script>alert(1)</script>', address: '', isDemo: false, coordinates: position };
+const html = geoapifyMapHtml('test-key', position, [shop, { ...shop, shopId: 'invalid', coordinates: { latitude: 100, longitude: 0 } }], shop, true);
+assert.ok(html.includes('maps.geoapify.com/v1/tile/osm-carto/'));
+assert.ok(html.includes('api.geoapify.com/v1/routing'));
+assert.ok(html.includes("lang:'fr'"));
+assert.ok(html.includes('step.instruction?.text'));
+assert.ok(html.includes('item.textContent=text'));
+assert.ok(html.includes('showRoute=true'));
+assert.ok(html.includes('OpenStreetMap'));
+assert.ok(!html.includes('</script><script>alert(1)</script>'));
+assert.ok(!html.includes('"id":"invalid"'));
+assert.ok(geoapifyMapHtml('test-key', null, [], null, false).includes('showRoute=false'));
+console.log('Geoapify map: validated markers, route selection and HTML escaping — OK');

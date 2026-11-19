@@ -4,4 +4,6 @@ export type NearbyMapProps = {
   selected: MapPlace | null;
   onSelect: (place: MapPlace) => void;
   places: MapPlace[];
+  showRoute: boolean;
+  height?: number;
 };

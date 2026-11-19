@@ -1,15 +1,14 @@
-import { createElement, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Text, View } from 'react-native';
-import { openStreetMapUrl } from '../models/openstreetmap';
+import { geoapifyMapHtml } from '../models/geoapify-map';
 import type { NearbyMapProps } from './map.types';
 
-export default function NearbyMap({ position, selected }: NearbyMapProps) {
-  const uri = useMemo(() => openStreetMapUrl(position, selected?.coordinates), [position, selected?.coordinates]);
+export default function NearbyMap({ position, selected, places, onSelect, showRoute, height = 350 }: NearbyMapProps) {
+  const key = process.env.EXPO_PUBLIC_GEOAPIFY_API_KEY ?? '';
+  const iframe = useRef<HTMLIFrameElement>(null);
+  const html = useMemo(() => geoapifyMapHtml(key, position, places, selected, showRoute), [key, position, places, selected, showRoute]);
+  useEffect(() => { const handler = (event: MessageEvent) => { if (event.source !== iframe.current?.contentWindow || typeof event.data !== 'string') return; try { const data = JSON.parse(event.data); const place = places.find(item => item.shopId === data.id); if (data.type === 'select' && place) onSelect(place); } catch { /* Ignore malformed messages. */ } }; window.addEventListener('message', handler); return () => window.removeEventListener('message', handler); }, [places, onSelect]);
   return <View style={{ borderRadius: 15, overflow: 'hidden', backgroundColor: 'white', borderWidth: 1, borderColor: '#eee' }}>
-    {createElement('iframe', {
-      title: 'Carte OpenStreetMap du quartier', src: uri,
-      style: { width: '100%', height: 350, border: 0 }, referrerPolicy: 'strict-origin-when-cross-origin',
-    })}
-    <Text style={{ padding: 12, color: '#777', fontSize: 10 }}>© OpenStreetMap contributors · Carte en ligne</Text>
+    {key ? <iframe ref={iframe} title="Carte Geoapify" srcDoc={html} sandbox="allow-scripts" style={{ width: '100%', height, border: 0 }} /> : <Text style={{ height, padding: 24 }}>La clé Geoapify n’est pas configurée pour cette version.</Text>}
   </View>;
 }

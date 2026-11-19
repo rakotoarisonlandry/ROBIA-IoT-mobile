@@ -6,7 +6,7 @@ import { useCurrentLocation } from './use-current-location';
 export function useShopLocator() {
   const app = useAppServices();
   const gps = useCurrentLocation();
-  const [area, setArea] = useState('');
+  const [area, setAreaValue] = useState('');
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [settingsError, setSettingsError] = useState('');
@@ -21,10 +21,11 @@ export function useShopLocator() {
     return () => { mounted.current = false; };
   }, []);
   const selected = result.places.find(place => place.shopId === selectedId) ?? null;
+  const setArea = (value: string) => { setAreaValue(value); setQuery(value); setSelectedId(null); setSettingsError(''); };
   const select = (place: MapPlace) => setSelectedId(place.shopId);
   const search = () => { setQuery(area); setSelectedId(null); setSettingsError(''); };
   const openSettings = () => { void app.openLocationSettings().catch(() => { if (mounted.current) setSettingsError('Autorisez la localisation dans les paramètres de votre appareil.'); }); };
   return { ...gps, position, isLocating: gps.status === 'locating', area, setArea,
-    selected, select, places: result.places, mapError: result.error || settingsError,
+    selected, select, clearSelection: () => setSelectedId(null), places: result.places, mapError: result.error || settingsError,
     isSearching: false, search, openSettings };
 }

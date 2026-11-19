@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { router } from 'expo-router';
 import { Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { GuideSpot, GuideViewport, type GuideScrollHandle } from '../../onboarding/guide-spot';
 import { useGuideRuntime } from '../../onboarding/guide-runtime';
@@ -266,6 +267,13 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
                 arriver 10 minutes à l’avance.
               </Text>
               {!!model.reminderMessage && <Text accessibilityRole="alert" style={[s.small, { textAlign: 'center' }]}>{model.reminderMessage}</Text>}
+              {shops[ticket.shop] && <Pressable accessibilityRole="button" onPress={() => {
+                setModal(false);
+                router.push({ pathname: '/localisation', params: { shopId: shops[ticket.shop].id, itineraire: '1' } });
+              }} style={[s.option, { justifyContent: 'center', gap: 10 }]}>
+                <Icon name="pin" color={orange} size={18} />
+                <Text style={{ color: orange, fontWeight: '700' }}>Voir l’itinéraire vers la boutique</Text>
+              </Pressable>}
               <Button
                 label={busy ? "Préparation…" : "Télécharger le ticket PDF"}
                 secondary
