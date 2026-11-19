@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppServices } from '../../../composition/app-services-provider';
 import { APPOINTMENT_TIMES, appointmentDate, validateCustomer } from '../../../domain/booking/rules';
 import { assessTravel, TRAVEL_ESTIMATE_MAX_AGE_MS } from '../../../domain/booking/travel-feasibility';
+import { simulatedSlotAvailability } from '../../../domain/booking/slot-availability';
+import type { Ticket } from '../../../domain/booking/entities';
+import { useProfile } from '../../profile/profile-provider';
 import { bookingErrorMessage } from '../models/booking-messages';
 import { toServiceViewModel, toShopViewModel, toTicketViewModel, type TicketViewModel } from '../models/booking-view-models';
 
 export function useBookingWorkflow() {
   const app = useAppServices();
+  const { profile } = useProfile();
   const catalog = useMemo(() => app.getCatalog(), [app]);
   const services = useMemo(() => catalog.services.map(toServiceViewModel), [catalog]);
   const shops = useMemo(() => catalog.shops.map(toShopViewModel), [catalog]);
@@ -17,13 +21,16 @@ export function useBookingWorkflow() {
   const [step, setStep] = useState(0);
   const [selected, setSelected] = useState<number[]>([0]);
   const [shop, setShop] = useState(0);
-  const [name, setName] = useState('');
-  const [cin, setCin] = useState('');
-  const [phone, setPhone] = useState('');
+  const { name = '', cin = '', phone = '' } = profile ?? {};
+  const [verifiedProfile, setVerifiedProfile] = useState('');
+  const profileKey = JSON.stringify([name, cin, phone]);
+  const resumeBooking = useRef(false);
   const [time, setTime] = useState('09:00');
   const [day, setDay] = useState(0);
   const [error, setError] = useState('');
   const [tickets, setTickets] = useState<TicketViewModel[]>([]);
+  const [slotTickets, setSlotTickets] = useState<Ticket[] | null>(null);
+  const [slotError, setSlotError] = useState('');
   const [ticket, setTicket] = useState<TicketViewModel | null>(null);
   const [busy, setBusy] = useState(false);
   const [help, setHelp] = useState(false);
@@ -44,12 +51,14 @@ export function useBookingWorkflow() {
 
   useFocusEffect(useCallback(() => {
     let active = true;
+    if (resumeBooking.current) { resumeBooking.current = false; setModal(true); }
     const revision = ticketRevision.current;
     void app.listTickets().then(tickets => {
       if (active && ticketRevision.current === revision) {
+        setSlotTickets(tickets); setSlotError('');
         setTickets(tickets.map(ticket => toTicketViewModel(ticket, catalog.shops, catalog.services)));
       }
-    }).catch(() => { if (active) setError('Les tickets n’ont pas pu être chargés.'); });
+    }).catch(() => { if (active) { setSlotTickets(null); setSlotError('Impossible de charger les créneaux.'); setError('Les tickets n’ont pas pu être chargés.'); } });
     void AsyncStorage.getItem('@robia/read-notifications-v1').then(value => {
       if (active) setReadReferences(value ? JSON.parse(value) : []);
     }).catch(() => {});
@@ -60,8 +69,9 @@ export function useBookingWorkflow() {
     if (service !== undefined) setSelected([service]);
     if (store !== undefined) setShop(store);
     travelRequest.current++; travelPending.current = false; setCheckingTravel(false); setTravel(null); setTravelError(''); setAcceptedRisk(''); setAcceptedUnverified('');
-    setStep(0); setError(''); setReminderMessage(''); setTicket(null); setModal(true);
+    setVerifiedProfile(''); setStep(profile ? 1 : 0); setError(''); setReminderMessage(''); setTicket(null); setModal(true);
   };
+  const editProfile = () => { setModal(false); resumeBooking.current = true; router.push('/profil'); };
   const validate = () => {
     try { validateCustomer({ name, cin, phone }); setError(''); return true; }
     catch (error) { setError(bookingErrorMessage(error)); return false; }
@@ -69,6 +79,11 @@ export function useBookingWorkflow() {
   const chooseShop = (value: number) => {
     if (value === shop) return;
     travelRequest.current++; travelPending.current = false; setCheckingTravel(false); setTravel(null); setTravelError(''); setAcceptedRisk(''); setAcceptedUnverified(''); setShop(value);
+  };
+  const availableFor = (slot: string): number | null => slotTickets ? simulatedSlotAvailability(shops[shop]?.id, dates[day], slot, slotTickets) : null;
+  const reloadSlots = async () => {
+    try { const items = await app.listTickets(); setSlotTickets(items); setSlotError(''); setError(''); }
+    catch { setSlotError('Impossible de charger les créneaux. Réessayez.'); }
   };
   const currentTravel = travel?.shopId === shops[shop]?.id ? travel : null;
   const choiceKey = currentTravel ? `${currentTravel.shopId}:${currentTravel.checkedAt}:${day}:${time}` : '';
@@ -102,6 +117,7 @@ export function useBookingWorkflow() {
   }, []);
   const confirm = async () => {
     if (bookingPending.current || checkingTravel) return;
+    if (!validate() || verifiedProfile !== profileKey) { setError('Vérifiez et confirmez vos informations avant de continuer.'); return; }
     if (!currentTravel && acceptedUnverified !== unverifiedKey) {
       setError('Vérifiez votre trajet ou confirmez que vous poursuivez sans estimation.'); return;
     }
@@ -120,12 +136,19 @@ export function useBookingWorkflow() {
     ticketRevision.current++;
     setError('');
     try {
+      const latestTickets = await app.listTickets();
+      setSlotTickets(latestTickets); setSlotError('');
+      if (simulatedSlotAvailability(shops[shop]?.id, dates[day], time, latestTickets) === 0) {
+        setError('Ce créneau est complet. Choisissez un autre horaire.'); return;
+      }
       const result = await app.bookAppointment({
         customer: { name, cin, phone }, shopId: shops[shop]?.id,
         serviceIds: selected.map(index => services[index]?.id),
         day: dates[day], time,
       });
-      setTickets((await app.listTickets()).map(ticket => toTicketViewModel(ticket, catalog.shops, catalog.services)));
+      const updatedTickets = await app.listTickets();
+      setSlotTickets(updatedTickets);
+      setTickets(updatedTickets.map(ticket => toTicketViewModel(ticket, catalog.shops, catalog.services)));
       const confirmed = toTicketViewModel(result, catalog.shops, catalog.services);
       void app.scheduleBookingReminder(result.appointmentAt, shops[confirmed.shop]?.name ?? 'votre boutique').then(status => {
         if (status === 'scheduled') setReminderMessage('Un rappel est prévu une heure avant votre rendez-vous.');
@@ -148,9 +171,12 @@ export function useBookingWorkflow() {
   return {
     services, shops, dates, appointmentTimes: APPOINTMENT_TIMES,
     modal, setModal, step, setStep, selected, setSelected, shop, setShop: chooseShop,
-    name, setName, cin, setCin, phone, setPhone, time, setTime, day, setDay,
+    name, cin, phone, time, setTime, day, setDay, editProfile,
+    profileConfirmed: verifiedProfile === profileKey && !!profile,
+    setProfileConfirmed: (value: boolean) => { setError(''); setVerifiedProfile(value ? profileKey : ''); },
     error, setError, tickets, ticket, setTicket, busy, help, setHelp, reminderMessage,
     currentTravel, travelAssessment, travelError, checkingTravel, checkTravel, cancelTravelCheck, riskAccepted: acceptedRisk === choiceKey && !!choiceKey,
+    availableFor, slotError, reloadSlots,
     setRiskAccepted: (value: boolean) => { setError(''); setAcceptedRisk(value ? choiceKey : ''); },
     unverifiedAccepted: acceptedUnverified === unverifiedKey,
     setUnverifiedAccepted: (value: boolean) => { setError(''); setAcceptedUnverified(value ? unverifiedKey : ''); },

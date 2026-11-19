@@ -1,17 +1,17 @@
-import { useRef, useState } from 'react';
-import { GuideSpot, GuideViewport, type GuideScrollHandle } from '../../onboarding/guide-spot';
-import { GuideEntry } from '../../onboarding/guide-entry';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ShopLocator from '../../location/components/shop-locator';
+import { GuideEntry } from '../../onboarding/guide-entry';
+import { GuideSpot, GuideViewport, type GuideScrollHandle } from '../../onboarding/guide-spot';
 import { BRAND_ORANGE as orange } from '../../shared/brand';
-import { useBookingWorkflow } from '../hooks/use-booking-workflow';
-import { Icon } from '../components/booking-icon';
-import { QR } from '../components/ticket-qr';
 import { Button } from '../components/booking-button';
 import { BookingDialog } from '../components/booking-dialog';
+import { Icon } from '../components/booking-icon';
 import { HelpDialog } from '../components/help-dialog';
+import { QR } from '../components/ticket-qr';
+import { useBookingWorkflow } from '../hooks/use-booking-workflow';
 import { bookingStyles as s } from './booking-screen.styles';
 const navigation = [
   { label: "Accueil", icon: "home" },
@@ -75,7 +75,7 @@ export default function BookingScreen() {
                 <Text style={s.helpLink}>Besoin d’aide ↗</Text>
               </Pressable>
             </View>
-            <Pressable style={s.profile} onPress={() => open()}>
+            <Pressable style={s.profile} onPress={() => router.push('/profil')}>
               <View style={s.avatar}>
                 <Icon name="user" size={18} color="#777" />
               </View>
@@ -99,7 +99,7 @@ export default function BookingScreen() {
                 },
               ]}
             >
-              {desktop ? tab : "Robia IoT"}
+              {desktop ? tab : "RobIoT"}
             </Text>
             <View style={s.headerRight}>
               {width > 450 && (
@@ -119,7 +119,7 @@ export default function BookingScreen() {
                 <Icon name="bell" size={21} />
                 {model.unreadNotifications > 0 && <View style={s.dot} />}
               </Pressable>
-              <Pressable style={s.avatar} onPress={() => open()}>
+              <Pressable style={s.avatar} accessibilityLabel="Mes informations" onPress={() => router.push('/profil')}>
                 <Text
                   style={{ fontWeight: "600", fontSize: 12, color: "#777" }}
                 >

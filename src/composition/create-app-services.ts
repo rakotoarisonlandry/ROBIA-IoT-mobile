@@ -11,6 +11,7 @@ import { guidePreferences } from "../infrastructure/onboarding/async-storage-gui
 import { ticketExporter } from "../infrastructure/pdf/ticket-exporter";
 import { demoReferences, systemClock } from "../infrastructure/system/runtime";
 import { AsyncStorageTicketRepository } from "../infrastructure/tickets/async-storage-ticket-repository";
+import { profileStore } from '../infrastructure/profile/profile-store';
 
 /** One container per mounted application, never shared between SSR requests. */
 export function createAppServices() {
@@ -42,6 +43,7 @@ export function createAppServices() {
       estimateDrivingTime,
     },
     guidePreferences,
+    profileStore,
     scheduleBookingReminder,
     observeNotificationResponses,
   };

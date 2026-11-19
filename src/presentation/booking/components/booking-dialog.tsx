@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { router } from 'expo-router';
-import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { GuideSpot, GuideViewport, type GuideScrollHandle } from '../../onboarding/guide-spot';
 import { useGuideRuntime } from '../../onboarding/guide-runtime';
 import { BRAND_ORANGE as orange } from '../../shared/brand';
@@ -12,7 +12,7 @@ import type { BookingWorkflow } from '../hooks/use-booking-workflow';
 export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: boolean }) {
   const scrollRef = useRef<GuideScrollHandle>(null);
   const { active: guideActive } = useGuideRuntime();
-  const { modal, setModal, step, name, setName, cin, setCin, phone, setPhone, validate, setStep, services, setSelected, selected, shops, setShop, shop, setError, dates, setDay, day, appointmentTimes, setTime, time, confirm, ticket, busy, pdf, error } = model;
+  const { modal, setModal, step, name, cin, phone, validate, setStep, services, setSelected, selected, shops, setShop, shop, setError, dates, setDay, day, appointmentTimes, setTime, time, confirm, ticket, busy, pdf, error } = model;
   const { checkTravel, cancelTravelCheck } = model;
   useEffect(() => {
     if (!modal || step !== 2 || guideActive) return;
@@ -34,7 +34,7 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
         >
           <GuideSpot key={step} name={['booking-customer', 'booking-services', 'booking-time', 'booking-ticket'][step]} order={1}
             text={[
-              'Renseignez votre nom et votre CIN à 12 chiffres. Le numéro de téléphone est facultatif. Cette visite guidée ne saisit aucune information à votre place.',
+              'Retrouvez vos informations enregistrées et modifiez-les si nécessaire.',
               'Choisissez un ou plusieurs services, puis votre boutique. Vous retrouverez ces choix dans votre ticket après confirmation.',
               'Choisissez le jour et un horaire entre 08 h et 16 h. La confirmation crée votre rendez-vous et son ticket. Pendant le guide, aucune réservation n’est effectuée.',
               'Retrouvez ici votre QR code, votre identifiant et le bouton pour enregistrer ou partager le ticket PDF.',
@@ -81,32 +81,14 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
                 Quelques informations pour préparer votre accueil.
               </Text>
               <Text style={s.label}>Nom complet *</Text>
-              <TextInput
-                style={s.input}
-                value={name}
-                onChangeText={setName}
-                placeholder="Votre nom et prénom"
-                autoComplete="name"
-              />
+              <Text style={s.input}>{name}</Text>
               <Text style={s.label}>Numéro de CIN *</Text>
-              <TextInput
-                style={s.input}
-                value={cin}
-                onChangeText={setCin}
-                placeholder="12 chiffres"
-                keyboardType="number-pad"
-                maxLength={12}
-              />
+              <Text style={s.input}>{cin}</Text>
               <Text style={s.label}>
                 Téléphone <Text style={s.small}>(facultatif)</Text>
               </Text>
-              <TextInput
-                style={s.input}
-                value={phone}
-                onChangeText={setPhone}
-                placeholder="034 00 000 00"
-                keyboardType="phone-pad"
-              />
+              <Text style={s.input}>{phone || 'Non renseigné'}</Text>
+              <Pressable accessibilityRole="button" onPress={model.editProfile} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: orange, fontWeight: '700' }}>Modifier mes informations</Text></Pressable>
               <Text style={s.small}>
                 Votre CIN originale sera demandée lors de votre visite.
               </Text>
@@ -212,26 +194,36 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
                 ))}
               </ScrollView>
               <Text style={s.label}>Votre heure de rendez-vous</Text>
+              <Text style={s.small}>Places simulées, non synchronisées avec la boutique. Elles ne reflètent pas les disponibilités réelles.</Text>
+              {!!model.slotError && <View style={{ gap: 6 }}><Text accessibilityRole="alert" style={s.error}>{model.slotError}</Text><Pressable accessibilityRole="button" onPress={() => void model.reloadSlots()} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: orange, fontWeight: '700' }}>Réessayer</Text></Pressable></View>}
+              {!model.slotError && model.availableFor(time) === null && <Text style={s.small}>Chargement des créneaux…</Text>}
               <View style={s.times}>
-                {appointmentTimes.map((t) => (
+                {appointmentTimes.map((t) => {
+                  const available = model.availableFor(t);
+                  const disabled = available === null || available === 0;
+                  return (
                   <Pressable
                     key={t}
                     onPress={() => setTime(t)}
+                    disabled={disabled}
                     accessibilityRole="button"
-                    accessibilityState={{ selected: time === t }}
-                    style={[s.time, { minHeight: 46, borderRadius: 12 }, time === t && s.optionSelected]}
+                    accessibilityLabel={`${t}, ${available === null ? 'chargement' : available === 0 ? 'complet' : `${available} place${available > 1 ? 's' : ''} simulée${available > 1 ? 's' : ''}`}`}
+                    accessibilityState={{ selected: time === t && !disabled, disabled }}
+                    style={[s.time, { minHeight: 58, borderRadius: 12, justifyContent: 'center', gap: 4 }, disabled && { backgroundColor: '#f4f4f4' }, time === t && !disabled && s.optionSelected]}
                   >
                     <Text
                       style={{
                         fontWeight: "600",
-                        color: time === t ? orange : "#555",
+                        color: disabled ? '#aaa' : time === t ? orange : "#555",
                       }}
                     >
                       {t}
                     </Text>
+                    <Text style={{ fontSize: 10, color: disabled ? '#999' : available !== null && available <= 2 ? '#b65920' : '#62846b', fontWeight: '600' }}>{available === null ? '…' : available === 0 ? 'Complet' : `${available} place${available > 1 ? 's' : ''}`}</Text>
                   </Pressable>
-                ))}
+                ); })}
               </View>
+              {model.availableFor(time) === 0 && <Text accessibilityRole="alert" style={s.error}>Cet horaire est complet. Choisissez un autre créneau.</Text>}
               <View style={s.summary}>
                 <Text style={s.shopName}>{shops[shop].name}</Text>
                 <Text style={s.small}>
@@ -258,11 +250,18 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
                   <Text style={{ color: orange, fontWeight: '700' }}>{model.checkingTravel ? 'Vérification du trajet…' : model.currentTravel ? 'Actualiser l’estimation' : 'Réessayer la vérification'}</Text>
                 </Pressable>
               </View>
+              <View style={{ backgroundColor: '#fff5ed', borderRadius: 14, padding: 16, gap: 10 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}><Text style={[s.shopName, { flex: 1 }]}>Vérifiez vos informations</Text><Pressable accessibilityRole="button" onPress={model.editProfile} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: orange, fontWeight: '700' }}>Modifier</Text></Pressable></View>
+                <Text style={s.small}>Nom : {name}</Text>
+                <Text style={s.small}>CIN : {cin}</Text>
+                <Text style={s.small}>Téléphone : {phone || 'Non renseigné'}</Text>
+                <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: model.profileConfirmed }} onPress={() => model.setProfileConfirmed(!model.profileConfirmed)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 }}><View style={{ width: 22, height: 22, borderWidth: 1, borderColor: orange, borderRadius: 5, backgroundColor: model.profileConfirmed ? orange : 'white', alignItems: 'center', justifyContent: 'center' }}>{model.profileConfirmed && <Icon name="check" size={15} color="white" />}</View><Text style={[s.small, { flex: 1, color: '#555' }]}>Je confirme que ces informations sont exactes.</Text></Pressable>
+              </View>
               <Text style={s.small}>
                 Les horaires ne sont pas synchronisés avec la boutique.
                 Vérifiez les disponibilités auprès de celle-ci.
               </Text>
-              <Button label="Enregistrer mon rendez-vous" disabled={guideActive || model.checkingTravel} onPress={confirm} />
+              <Button label="Enregistrer mon rendez-vous" disabled={guideActive || model.checkingTravel || model.availableFor(time) === null || model.availableFor(time) === 0} onPress={confirm} />
             </View>
           )}
           {step === 3 && ticket && (

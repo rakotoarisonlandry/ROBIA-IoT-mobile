@@ -1,0 +1,22 @@
+const assert = require('node:assert/strict');
+require('./test-support/register-typescript.cjs');
+const { simulatedSlotAvailability, SIMULATED_SLOT_CAPACITY } = require('../src/domain/booking/slot-availability.ts');
+
+const day = new Date(2026, 10, 20);
+const hours = Array.from({ length: 17 }, (_, i) => `${String(8 + Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'}`);
+const availableHour = hours.find(time => simulatedSlotAvailability('fianarantsoa', day, time, []) >= 2);
+assert.ok(availableHour, 'At least one available slot exists in the example');
+const starting = simulatedSlotAvailability('fianarantsoa', day, availableHour, []);
+assert.equal(simulatedSlotAvailability('fianarantsoa', day, availableHour, []), starting, 'Availability stays stable');
+assert.ok(starting <= SIMULATED_SLOT_CAPACITY);
+const [hour, minute] = availableHour.split(':').map(Number);
+const at = new Date(day); at.setHours(hour, minute, 0, 0);
+const ticket = { shopId: 'fianarantsoa', appointmentAt: at.toISOString() };
+assert.equal(simulatedSlotAvailability('fianarantsoa', day, availableHour, [ticket]), starting - 1);
+assert.equal(simulatedSlotAvailability('fianarantsoa', day, availableHour, Array(10).fill(ticket)), 0);
+assert.equal(simulatedSlotAvailability('fianarantsoa', day, availableHour, [{ ...ticket, shopId: 'other' }]), starting);
+const otherDay = new Date(at); otherDay.setDate(otherDay.getDate() + 1);
+assert.equal(simulatedSlotAvailability('fianarantsoa', day, availableHour, [{ ...ticket, appointmentAt: otherDay.toISOString() }]), starting);
+assert.equal(simulatedSlotAvailability('', day, availableHour, []), 0);
+assert.equal(simulatedSlotAvailability('fianarantsoa', new Date(NaN), availableHour, []), 0);
+console.log('Simulated slots: stable capacity, local reservations and independent dates and shops — OK');
