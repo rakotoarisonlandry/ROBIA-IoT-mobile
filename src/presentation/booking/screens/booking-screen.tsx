@@ -170,6 +170,7 @@ export default function BookingScreen() {
               )}
             </GuideSpot>
             <GuideEntry tab={tab} navigate={setTab} model={model} ready={layoutReady && !modal && !help} />
+            {!!model.catalogError && <Text accessibilityRole="alert" style={s.error}>{model.catalogError}</Text>}
             {tab === "Accueil" && (
               <>
                 <View style={[s.hero, !wide && { padding: 26 }]}>
@@ -413,8 +414,9 @@ export default function BookingScreen() {
                           {t.services.map((i) => services[i].name).join(" · ")}
                         </Text>
                         <Text style={s.available}>
-                          Enregistré sur cet appareil · Non transmis à la boutique
+                          {model.isRemote ? ({ pending: 'En attente de confirmation', confirmed: 'Confirmé par la boutique', rejected: 'Refusé par la boutique', cancelled: 'Annulé' }[t.status ?? 'pending']) : 'Enregistré sur cet appareil · Non transmis à la boutique'}
                         </Text>
+                        {model.isRemote && (t.status === 'pending' || t.status === 'confirmed') && <Pressable accessibilityRole="button" disabled={model.busy} onPress={() => model.cancelTarget === t.reference ? void model.cancelBooking(t.reference) : model.setCancelTarget(t.reference)} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={s.orangeLink}>{model.cancelTarget === t.reference ? 'Confirmer l’annulation' : 'Annuler le rendez-vous'}</Text></Pressable>}
                       </View>
                       <Pressable
                         onPress={() => {

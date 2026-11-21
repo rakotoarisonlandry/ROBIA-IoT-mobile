@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { validateCustomer } from "../../domain/booking/rules";
 import { bookingErrorMessage } from "../booking/models/booking-messages";
 import { useProfile } from "./profile-provider";
+import { EmailRecovery } from './email-recovery';
 
 export default function ProfileScreen() {
   const { profile, save } = useProfile();
@@ -168,6 +169,7 @@ export default function ProfileScreen() {
               {busy ? "Enregistrement…" : "Enregistrer mes informations"}
             </Text>
           </Pressable>
+          <EmailRecovery />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

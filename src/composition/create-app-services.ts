@@ -13,39 +13,54 @@ import { demoReferences, systemClock } from "../infrastructure/system/runtime";
 import { AsyncStorageTicketRepository } from "../infrastructure/tickets/async-storage-ticket-repository";
 import { profileStore } from '../infrastructure/profile/profile-store';
 import { createAppointmentsApi } from '../infrastructure/appointments/appointments-api';
+import { remoteAppointmentToTicket, remoteShopToShop } from '../application/booking/remote-booking-mapping';
+import type { Shop } from '../domain/booking/entities';
 
 /** One container per mounted application, never shared between SSR requests. */
 export function createAppServices() {
   const tickets = new AsyncStorageTicketRepository();
   const clock = systemClock;
   const references = demoReferences;
+  const appointmentsApi = createAppointmentsApi(process.env.EXPO_PUBLIC_ROBIA_API_URL);
+  let remoteShops: Shop[] = [];
+  const catalog = {
+    getServices: () => demoCatalog.getServices(),
+    getShops: () => appointmentsApi.configured ? remoteShops : demoCatalog.getShops(),
+  };
+  const localBook = createBookAppointment({ tickets, clock, references, catalog });
+  const listTickets = async () => {
+    if (!appointmentsApi.configured) return tickets.getAll();
+    const bookings = await appointmentsApi.list();
+    for (const booking of bookings) {
+      const location = booking.slot?.location;
+      if (location && !remoteShops.some(shop => shop.id === location.id)) remoteShops = [...remoteShops, remoteShopToShop({ ...location, city: null, latitude: null, longitude: null })];
+    }
+    return bookings.map(remoteAppointmentToTicket).filter((ticket): ticket is NonNullable<typeof ticket> => ticket !== null);
+  };
   return {
     getCatalog: () => ({
-      services: demoCatalog.getServices(),
-      shops: demoCatalog.getShops(),
+      services: catalog.getServices(),
+      shops: catalog.getShops(),
     }),
+    refreshCatalog: async () => { if (appointmentsApi.configured) remoteShops = (await appointmentsApi.shops()).map(remoteShopToShop); return { services: catalog.getServices(), shops: catalog.getShops() }; },
     getUpcomingDays: () => upcomingDays(clock.now()),
-    bookAppointment: createBookAppointment({
-      tickets,
-      clock,
-      references,
-      catalog: demoCatalog,
-    }),
-    listTickets: () => tickets.getAll(),
+    bookAppointment: localBook,
+    listTickets,
     exportTicket: createExportTicket({
       tickets,
       catalog: demoCatalog,
       exporter: ticketExporter,
     }),
+    exportBookingDocument: ticketExporter.export,
     locateUser: createLocateUser(expoLocationGateway),
     openLocationSettings: () => expoLocationGateway.openSettings(),
     maps: {
-      search: createSearchShops(demoCatalog),
+      search: createSearchShops(catalog),
       estimateDrivingTime,
     },
     guidePreferences,
     profileStore,
-    appointmentsApi: createAppointmentsApi(process.env.EXPO_PUBLIC_ROBIA_API_URL),
+    appointmentsApi,
     scheduleBookingReminder,
     observeNotificationResponses,
   };

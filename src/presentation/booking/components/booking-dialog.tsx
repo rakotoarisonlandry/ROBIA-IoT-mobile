@@ -194,7 +194,7 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
                 ))}
               </ScrollView>
               <Text style={s.label}>Votre heure de rendez-vous</Text>
-              <Text style={s.small}>Places simulées, non synchronisées avec la boutique. Elles ne reflètent pas les disponibilités réelles.</Text>
+              <Text style={s.small}>{model.isRemote ? 'Places disponibles communiquées par la boutique.' : 'Places simulées, non synchronisées avec la boutique. Elles ne reflètent pas les disponibilités réelles.'}</Text>
               {!!model.slotError && <View style={{ gap: 6 }}><Text accessibilityRole="alert" style={s.error}>{model.slotError}</Text><Pressable accessibilityRole="button" onPress={() => void model.reloadSlots()} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: orange, fontWeight: '700' }}>Réessayer</Text></Pressable></View>}
               {!model.slotError && model.availableFor(time) === null && <Text style={s.small}>Chargement des créneaux…</Text>}
               <View style={s.times}>
@@ -207,7 +207,7 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
                     onPress={() => setTime(t)}
                     disabled={disabled}
                     accessibilityRole="button"
-                    accessibilityLabel={`${t}, ${available === null ? 'chargement' : available === 0 ? 'complet' : `${available} place${available > 1 ? 's' : ''} simulée${available > 1 ? 's' : ''}`}`}
+                    accessibilityLabel={`${t}, ${available === null ? 'chargement' : available === 0 ? 'complet ou indisponible' : `${available} place${available > 1 ? 's' : ''}${model.isRemote ? '' : ' simulée'}`}`}
                     accessibilityState={{ selected: time === t && !disabled, disabled }}
                     style={[s.time, { minHeight: 58, borderRadius: 12, justifyContent: 'center', gap: 4 }, disabled && { backgroundColor: '#f4f4f4' }, time === t && !disabled && s.optionSelected]}
                   >
@@ -257,10 +257,10 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
                 <Text style={s.small}>Téléphone : {phone || 'Non renseigné'}</Text>
                 <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: model.profileConfirmed }} onPress={() => model.setProfileConfirmed(!model.profileConfirmed)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 }}><View style={{ width: 22, height: 22, borderWidth: 1, borderColor: orange, borderRadius: 5, backgroundColor: model.profileConfirmed ? orange : 'white', alignItems: 'center', justifyContent: 'center' }}>{model.profileConfirmed && <Icon name="check" size={15} color="white" />}</View><Text style={[s.small, { flex: 1, color: '#555' }]}>Je confirme que ces informations sont exactes.</Text></Pressable>
               </View>
-              <Text style={s.small}>
+              {!model.isRemote && <Text style={s.small}>
                 Les horaires ne sont pas synchronisés avec la boutique.
                 Vérifiez les disponibilités auprès de celle-ci.
-              </Text>
+              </Text>}
               <Button label="Enregistrer mon rendez-vous" disabled={guideActive || model.checkingTravel || model.availableFor(time) === null || model.availableFor(time) === 0} onPress={confirm} />
             </View>
           )}
@@ -268,7 +268,7 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
             <View style={s.form}>
               <View style={s.finalTicket}>
                 <View style={s.confirmed}>
-                  <Text style={s.available}>✓ Enregistré sur cet appareil</Text>
+                  <Text style={s.available}>{model.isRemote ? ({ pending: 'En attente de confirmation', confirmed: 'Confirmé par la boutique', rejected: 'Refusé par la boutique', cancelled: 'Annulé' }[ticket.status ?? 'pending']) : '✓ Enregistré sur cet appareil'}</Text>
                 </View>
                 <Text style={s.ticketId}>{ticket.id}</Text>
                 <Text style={s.shopName}>{shops[ticket.shop].name}</Text>
@@ -285,7 +285,7 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
                   Conseiller : {shops[ticket.shop].agent}
                 </Text>
               </View>
-              <Text style={[s.small, { textAlign: 'center' }]}>Ce ticket n’a pas été transmis à la boutique. Confirmez votre rendez-vous auprès de celle-ci.</Text>
+              <Text style={[s.small, { textAlign: 'center' }]}>{model.isRemote ? 'La demande est transmise à la boutique. Le QR code ne constitue pas une validation de votre visite.' : 'Ce ticket n’a pas été transmis à la boutique. Confirmez votre rendez-vous auprès de celle-ci.'}</Text>
               <Text style={[s.small, { textAlign: "center" }]}>
                 Présentez ce QR code et votre CIN originale.{"\n"}Pensez à
                 arriver 10 minutes à l’avance.

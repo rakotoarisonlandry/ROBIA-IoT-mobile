@@ -19,6 +19,7 @@ export type Ticket = {
   serviceIds: ServiceId[];
   appointmentAt: string;
   customerName: string;
+  status?: 'pending' | 'confirmed' | 'rejected' | 'cancelled';
 };
 export type TicketDraft = Omit<Ticket, 'id'>;
 

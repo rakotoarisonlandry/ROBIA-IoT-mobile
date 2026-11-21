@@ -15,7 +15,7 @@ export default function NotificationsScreen() {
   useFocusEffect(useCallback(() => {
     let active = true;
     setLoading(true);
-    void app.listTickets().then(async items => {
+    void app.refreshCatalog().then(() => app.listTickets()).then(async items => {
       if (!active) return;
       setTickets(items);
       setError(false);
@@ -37,7 +37,7 @@ export default function NotificationsScreen() {
         const shop = shops.find(item => item.id === ticket.shopId)?.name ?? 'votre boutique';
         return <Pressable key={ticket.reference} accessibilityRole="button" onPress={() => router.replace({ pathname: '/', params: { view: 'Mes rendez-vous' } })} style={({ pressed }) => [styles.card, pressed && { opacity: 0.7 }]}>
           <View style={styles.cardIcon}><Icon name="calendar" size={20} color="#ff6600" /></View>
-          <View style={{ flex: 1, gap: 5 }}><Text style={styles.cardTitle}>Rendez-vous enregistré</Text><Text style={styles.body}>{shop} · {date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à {date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</Text><Text style={styles.link}>Voir mon rendez-vous  ›</Text></View>
+          <View style={{ flex: 1, gap: 5 }}><Text style={styles.cardTitle}>{ticket.status ? ({ pending: 'Demande en attente', confirmed: 'Rendez-vous confirmé', rejected: 'Demande refusée', cancelled: 'Rendez-vous annulé' }[ticket.status]) : 'Rendez-vous enregistré'}</Text><Text style={styles.body}>{shop} · {date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à {date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</Text><Text style={styles.link}>Voir mon rendez-vous  ›</Text></View>
         </Pressable>;
       })}
     </ScrollView>

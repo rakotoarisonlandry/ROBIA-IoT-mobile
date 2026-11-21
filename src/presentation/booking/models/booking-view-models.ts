@@ -42,6 +42,7 @@ export type TicketViewModel = {
   date: string;
   time: string;
   name: string;
+  status?: Ticket['status'];
 };
 export function toTicketViewModel(
   ticket: Ticket,
@@ -66,5 +67,6 @@ export function toTicketViewModel(
       date.getMinutes(),
     ).padStart(2, "0")}`,
     name: ticket.customerName,
+    status: ticket.status,
   };
 }
