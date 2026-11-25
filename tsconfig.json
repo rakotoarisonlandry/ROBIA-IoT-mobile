@@ -11,6 +11,7 @@
       ]
     }
   },
+  "exclude": ["robia-iot-version-statique", ".work-robia-back", ".work-robia-back-realtime"],
   "include": [
     "**/*.ts",
     "**/*.tsx",

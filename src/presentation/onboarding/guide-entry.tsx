@@ -1,5 +1,7 @@
 import { useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Keyboard, Pressable, StyleSheet, Text } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, View } from 'react-native';
+import { Brand, Radius } from '../shared/brand';
+import { Text } from '../shared/components/text';
 import { useCopilot } from 'react-native-copilot';
 import { useAppServices } from '../../composition/app-services-provider';
 import type { BookingWorkflow } from '../booking/hooks/use-booking-workflow';
@@ -120,12 +122,13 @@ export function GuideEntry({ tab, navigate, model, ready }: { tab: string; navig
     return () => { active = false; };
   }, [controls, guidePreferences, ready]);
   return <>
-    <Pressable onPress={() => controls.restart()} disabled={!ready || runtime.active} style={s.link} accessibilityRole="button"><Text style={s.linkText}>ⓘ Revoir le guide</Text></Pressable>
+    <Pressable onPress={() => controls.restart()} disabled={!ready || runtime.active} style={s.link} accessibilityRole="button"><View style={s.chip}><Text style={s.linkText}>✦ Revoir le guide</Text></View></Pressable>
     {!!error && <Text accessibilityRole="alert" style={s.error}>{error}</Text>}
   </>;
 }
 const s = StyleSheet.create({
-  link: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', marginBottom: 5 },
-  linkText: { fontSize: 11, color: '#e65b00', fontWeight: '600' },
-  error: { fontSize: 12, color: '#a34000', marginBottom: 12 },
+  link: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', marginBottom: 8 },
+  chip: { backgroundColor: Brand.surface, borderRadius: Radius.pill, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: Brand.border },
+  linkText: { fontSize: 12, color: Brand.orangeDark, fontWeight: '700' },
+  error: { fontSize: 13, color: '#BE554E', marginBottom: 12 },
 });

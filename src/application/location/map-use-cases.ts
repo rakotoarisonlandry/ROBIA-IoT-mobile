@@ -16,7 +16,7 @@ export function createSearchShops(catalog: Pick<CatalogRepository, 'getShops'>) 
       || (request.position != null && !isValidCoordinates(request.position))) throw new MapError('invalid-request');
     const query = normalize(request.area);
     return catalog.getShops()
-      .filter(shop => normalize(shop.name + ' ' + shop.address).includes(query))
+      .filter(shop => shop.bookable !== false && normalize(shop.name + ' ' + shop.address).includes(query))
       .map(shop => {
         const coordinates = isValidCoordinates(shop.coordinates) ? { ...shop.coordinates } : undefined;
         return {

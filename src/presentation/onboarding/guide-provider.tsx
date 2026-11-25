@@ -1,5 +1,7 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
-import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Brand } from '../shared/brand';
+import { Text } from '../shared/components/text';
 import { CopilotProvider, useCopilot } from 'react-native-copilot';
 import { GUIDE_STEPS } from './guide-plan';
 import { GuideRuntimeContext, useGuideRuntime, type GuideControls, type GuideTargetHandle } from './guide-runtime';
@@ -31,19 +33,19 @@ export function GuideProvider({ children }: { children: ReactNode }) {
     <CopilotProvider overlay={Platform.OS === 'web' ? 'view' : 'svg'} animated={false} animationDuration={0} tooltipComponent={GuideTooltip}
       stepNumberComponent={NoStepNumber} backdropColor="rgba(15,18,22,.65)" arrowColor="white"
       androidStatusBarVisible stopOnOutsideClick={false}
-      tooltipStyle={{ borderRadius: 15, padding: 18, width: Math.min(width - 32, 360) }}>
+      tooltipStyle={{ borderRadius: 24, padding: 20, width: Math.min(width - 32, 360) }}>
       {children}
     </CopilotProvider>
   </GuideRuntimeContext.Provider>;
 }
 const s = StyleSheet.create({
   heading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
-  eyebrow: { fontSize: 9, fontWeight: '700', letterSpacing: 1.3, color: '#ff6600' },
-  counter: { fontSize: 11, color: '#999' },
-  text: { fontSize: 14, color: '#333', lineHeight: 23, marginTop: 15 },
-  actions: { flexDirection: 'row', alignItems: 'center', marginTop: 17, gap: 6 },
-  textButton: { minHeight: 44, paddingHorizontal: 8, justifyContent: 'center' },
-  muted: { fontSize: 12, color: '#888' },
-  next: { minHeight: 44, paddingHorizontal: 17, backgroundColor: '#ff6600', borderRadius: 8, justifyContent: 'center' },
-  nextText: { color: 'white', fontSize: 12, fontWeight: '700' },
+  eyebrow: { fontSize: 11, fontWeight: '800', letterSpacing: 1.3, color: Brand.orange },
+  counter: { fontSize: 12, fontWeight: '700', color: Brand.textTertiary, backgroundColor: Brand.canvas, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3, overflow: 'hidden' },
+  text: { fontSize: 15, color: Brand.ink, lineHeight: 23, marginTop: 14, fontWeight: '500' },
+  actions: { flexDirection: 'row', alignItems: 'center', marginTop: 18, gap: 6 },
+  textButton: { minHeight: 44, paddingHorizontal: 10, justifyContent: 'center' },
+  muted: { fontSize: 14, color: Brand.textSecondary, fontWeight: '600' },
+  next: { minHeight: 46, paddingHorizontal: 20, backgroundColor: Brand.orange, borderRadius: 14, justifyContent: 'center', boxShadow: '0px 8px 18px rgba(255,102,0,0.28)' },
+  nextText: { color: Brand.white, fontSize: 15, fontWeight: '700' },
 });

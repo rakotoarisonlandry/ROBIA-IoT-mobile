@@ -1,4 +1,4 @@
-import { observeNotificationResponses, scheduleBookingReminder } from '../infrastructure/notifications/booking-notifications';
+import { observeNotificationResponses, registerAppointmentPush, scheduleBookingReminder } from '../infrastructure/notifications/booking-notifications';
 import { createBookAppointment } from "../application/booking/book-appointment";
 import { createExportTicket } from "../application/booking/export-ticket";
 import { createLocateUser } from "../application/location/locate-user";
@@ -23,9 +23,15 @@ export function createAppServices() {
   const references = demoReferences;
   const appointmentsApi = createAppointmentsApi(process.env.EXPO_PUBLIC_ROBIA_API_URL);
   let remoteShops: Shop[] = [];
+  // Shops only known through the customer's own bookings (e.g. suspended since).
+  // They stay after the bookable ones so ticket screens can still name them,
+  // and the bookable list keeps the same indexes.
+  let ticketShops: Shop[] = [];
   const catalog = {
     getServices: () => demoCatalog.getServices(),
-    getShops: () => appointmentsApi.configured ? remoteShops : demoCatalog.getShops(),
+    getShops: () => appointmentsApi.configured
+      ? [...remoteShops, ...ticketShops.filter(shop => !remoteShops.some(open => open.id === shop.id))]
+      : demoCatalog.getShops(),
   };
   const localBook = createBookAppointment({ tickets, clock, references, catalog });
   const listTickets = async () => {
@@ -33,7 +39,7 @@ export function createAppServices() {
     const bookings = await appointmentsApi.list();
     for (const booking of bookings) {
       const location = booking.slot?.location;
-      if (location && !remoteShops.some(shop => shop.id === location.id)) remoteShops = [...remoteShops, remoteShopToShop({ ...location, city: null, latitude: null, longitude: null })];
+      if (location && !ticketShops.some(shop => shop.id === location.id)) ticketShops = [...ticketShops, { ...remoteShopToShop({ ...location, city: null, latitude: null, longitude: null }), bookable: false }];
     }
     return bookings.map(remoteAppointmentToTicket).filter((ticket): ticket is NonNullable<typeof ticket> => ticket !== null);
   };
@@ -61,6 +67,7 @@ export function createAppServices() {
     guidePreferences,
     profileStore,
     appointmentsApi,
+    registerAppointmentPush: (askPermission = false) => appointmentsApi.configured ? registerAppointmentPush(appointmentsApi.registerPushToken, askPermission) : Promise.resolve(false),
     scheduleBookingReminder,
     observeNotificationResponses,
   };

@@ -8,6 +8,11 @@ node_modules/
 dist/
 dist-android/
 artifacts/
+/robia-iot-version-statique/
+/dashboard-boutique/
+/admin-dashboard/
+/.work-robia-back/
+/.work-robia-back-realtime/
 web-build/
 expo-env.d.ts
 
@@ -43,3 +48,6 @@ example
 # generated native folders
 /ios
 /android
+
+# Vercel CLI project links
+.vercel

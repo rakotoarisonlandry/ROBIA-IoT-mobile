@@ -34,15 +34,26 @@ export function toShopViewModel(shop: Shop) {
     photo: shopPhotos[shop.id] ?? "photo-1441986300917-64674bd600d8",
   };
 }
+/** Short, readable ticket code (server IDs are long): last 6 characters, upper case. */
+export function shortTicketCode(id: string) {
+  const clean = id.replace(/[^A-Za-z0-9]/g, '');
+  return (clean.length > 6 ? clean.slice(-6) : clean || id).toUpperCase();
+}
 export type TicketViewModel = {
   id: string;
+  /** What the customer sees and can read out at the counter, e.g. "A1B2C3". */
+  code: string;
   reference: string;
   shop: number;
   services: number[];
   date: string;
   time: string;
   name: string;
+  /** ISO date used to sort and find the next appointment. */
+  appointmentAt: string;
   status?: Ticket['status'];
+  serviceResult?: Ticket['serviceResult'];
+  serviceMessage?: string | null;
 };
 export function toTicketViewModel(
   ticket: Ticket,
@@ -52,6 +63,7 @@ export function toTicketViewModel(
   const date = new Date(ticket.appointmentAt);
   return {
     id: ticket.id,
+    code: shortTicketCode(ticket.id),
     reference: ticket.reference,
     shop: shops.findIndex((shop) => shop.id === ticket.shopId),
     services: ticket.serviceIds.map((id) =>
@@ -62,11 +74,15 @@ export function toTicketViewModel(
       day: "numeric",
       month: "long",
       year: "numeric",
+      ...(ticket.status ? { timeZone: 'Indian/Antananarivo' } : {}),
     }),
-    time: `${String(date.getHours()).padStart(2, "0")}:${String(
+    time: ticket.status ? date.toLocaleTimeString('fr-FR', { timeZone: 'Indian/Antananarivo', hour: '2-digit', minute: '2-digit', hour12: false }) : `${String(date.getHours()).padStart(2, "0")}:${String(
       date.getMinutes(),
     ).padStart(2, "0")}`,
     name: ticket.customerName,
+    appointmentAt: date.toISOString(),
     status: ticket.status,
+    serviceResult: ticket.serviceResult,
+    serviceMessage: ticket.serviceMessage,
   };
 }

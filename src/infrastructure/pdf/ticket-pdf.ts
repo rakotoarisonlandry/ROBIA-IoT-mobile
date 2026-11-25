@@ -36,7 +36,7 @@ export async function createTicketPdf(ticket: PdfTicket): Promise<Uint8Array> {
   page.drawText('robia.', { x: 48, y, size: 32, font: bold, color: rgb(1, .4, 0) });
   y -= 50;
   text('VOTRE RENDEZ-VOUS EN BOUTIQUE', 11);
-  text(ticket.id, 38, true);
+  text(`Ticket ${ticket.id}`, 30, true);
   text(ticket.name, 18, true);
   text(ticket.shopName, 14, true);
   text(ticket.address);
@@ -61,9 +61,15 @@ export async function createTicketPdf(ticket: PdfTicket): Promise<Uint8Array> {
     }
   }
   y -= 180;
-  text(ticket.reference, 9);
+  text(`Réf. ${ticket.reference}`, 9);
   text('Présentez votre CIN originale et arrivez 10 minutes à l’avance.', 10);
-  text('Enregistré sur cet appareil, non transmis à la boutique. Rendez-vous à confirmer.', 10);
+  text(ticket.status ? {
+    pending: 'Demande transmise, en attente de confirmation par la boutique.',
+    confirmed: 'Rendez-vous confirmé par la boutique.',
+    rejected: 'Demande refusée par la boutique.',
+    cancelled: 'Rendez-vous annulé.',
+  }[ticket.status] : 'Enregistré sur cet appareil, non transmis à la boutique. Rendez-vous à confirmer.', 10);
+  if (ticket.status) text('Le QR code est une référence et ne constitue pas une validation de la visite.', 9);
   return pdf.save();
 }
 

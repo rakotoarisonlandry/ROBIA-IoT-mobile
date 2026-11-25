@@ -10,6 +10,10 @@ export type Shop = {
   queuePrefix: string;
   isDemo: boolean;
   coordinates?: { latitude: number; longitude: number };
+  city?: string;
+  phone?: string;
+  /** false: no longer open to bookings (suspended), kept only to show past tickets. */
+  bookable?: boolean;
 };
 export type Customer = { name: string; cin: string; phone: string };
 export type Ticket = {
@@ -20,6 +24,8 @@ export type Ticket = {
   appointmentAt: string;
   customerName: string;
   status?: 'pending' | 'confirmed' | 'rejected' | 'cancelled';
+  serviceResult?: 'treated' | 'not_treated' | null;
+  serviceMessage?: string | null;
 };
 export type TicketDraft = Omit<Ticket, 'id'>;
 

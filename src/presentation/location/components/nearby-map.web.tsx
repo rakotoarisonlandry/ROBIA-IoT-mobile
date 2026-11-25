@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '../../shared/components/text';
 import { geoapifyMapHtml } from '../models/geoapify-map';
 import type { NearbyMapProps } from './map.types';
 
