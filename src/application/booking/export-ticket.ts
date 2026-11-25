@@ -1,18 +1,18 @@
 import { BookingError } from '../../domain/booking/entities';
-import type { CatalogRepository, TicketExporter, TicketRepository } from './ports';
+import type { CatalogRepository, TicketExporter, TicketExportResult, TicketRepository } from './ports';
 
 export function createExportTicket(dependencies: {
   tickets: TicketRepository;
   catalog: CatalogRepository;
   exporter: TicketExporter;
 }) {
-  return async (reference: string): Promise<void> => {
+  return async (reference: string): Promise<TicketExportResult> => {
     const ticket = await dependencies.tickets.findByReference(reference);
     if (!ticket) throw new BookingError('ticket-not-found');
     const shop = dependencies.catalog.getShops().find(shop => shop.id === ticket.shopId);
     if (!shop) throw new BookingError('invalid-shop');
     const date = new Date(ticket.appointmentAt);
-    await dependencies.exporter.export({
+    return dependencies.exporter.export({
       id: ticket.id, reference: ticket.reference, name: ticket.customerName,
       shopName: shop.name, address: shop.address, agent: shop.agent,
       date: date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),

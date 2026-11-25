@@ -7,12 +7,13 @@ export const ticketExporter: TicketExporter = {
     const url = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }));
     const link = document.createElement('a');
     link.href = url;
-    link.download = `Robia-ticket-${ticket.id}.pdf`;
+    link.download = `Ticket-Robia-${ticket.id.replace(/[^A-Za-z0-9-]/g, '') || 'rendez-vous'}.pdf`;
     document.body.appendChild(link);
     try { link.click(); }
     finally {
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     }
+    return 'saved';
   },
 };

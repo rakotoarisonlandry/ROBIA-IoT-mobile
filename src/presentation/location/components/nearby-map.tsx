@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../shared/components/text';
 import { WebView } from 'react-native-webview';
 import { geoapifyMapHtml } from '../models/geoapify-map';
 import type { NearbyMapProps } from './map.types';

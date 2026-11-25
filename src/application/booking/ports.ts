@@ -22,5 +22,8 @@ export type TicketDocument = {
   time: string;
   services: string[];
   agent: string;
+  status?: 'pending' | 'confirmed' | 'rejected' | 'cancelled';
 };
-export interface TicketExporter { export(document: TicketDocument): Promise<void> }
+/** 'saved': written to a folder the customer chose; 'shared': handed to the share sheet or browser download. */
+export type TicketExportResult = 'saved' | 'shared';
+export interface TicketExporter { export(document: TicketDocument): Promise<TicketExportResult> }

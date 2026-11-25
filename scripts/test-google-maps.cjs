@@ -17,6 +17,8 @@ const { demoCatalog } = require('../src/infrastructure/catalog/demo-catalog.ts')
     const ordered = await search({ position, area: '' });
     assert.deepEqual(ordered.map(p => p.shopId), ['near', 'far', 'unknown', 'invalid']);
     assert.equal(ordered[0].straightLineMeters, 0);
+    const suspended = { ...near, id: 'suspended', bookable: false };
+    assert.deepEqual((await createSearchShops({ getShops: () => [near, suspended] })({ position, area: '' })).map(p => p.shopId), ['near']);
     assert.equal(ordered[2].coordinates, undefined);
     assert.equal(ordered[2].straightLineMeters, undefined);
     assert.equal(ordered[3].coordinates, undefined);

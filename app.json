@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.robia.mobile",
-      "versionCode": 4,
+      "versionCode": 5,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/images/robia-iot-logo-v1.png"

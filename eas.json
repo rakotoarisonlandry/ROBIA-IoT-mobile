@@ -7,8 +7,11 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
-      }
+      },
+      "environment": "preview"
     },
-    "production": {}
+    "production": {
+      "environment": "production"
+    }
   }
 }

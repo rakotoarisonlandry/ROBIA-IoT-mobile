@@ -2,7 +2,7 @@ const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
 module.exports = defineConfig([
   expoConfig,
-  { ignores: ['dist/**', 'dist-android/**', 'artifacts/**'] },
+  { ignores: ['dist/**', 'dist-android/**', 'artifacts/**', 'robia-iot-version-statique/**', '.work-robia-back/**', '.work-robia-back-realtime/**'] },
   {
     files: ['src/domain/**/*.ts', 'src/application/**/*.ts'],
     rules: {

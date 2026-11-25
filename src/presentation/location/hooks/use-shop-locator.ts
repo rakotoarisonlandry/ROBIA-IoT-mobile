@@ -24,7 +24,7 @@ export function useShopLocator() {
   })();
   useFocusEffect(useCallback(() => {
     let active = true;
-    if (app.appointmentsApi.configured) void app.refreshCatalog().then(() => { if (active) setCatalogRevision(value => value + 1); }).catch(() => { if (active) setSettingsError('Impossible de charger les boutiques. Vérifiez votre connexion.'); });
+    if (app.appointmentsApi.configured) void app.refreshCatalog().then(catalog => { if (active) { setCatalogRevision(value => value + 1); setSettingsError(catalog.shops.length ? '' : 'Aucune boutique ouverte aux rendez-vous pour le moment.'); } }).catch(() => { if (active) setSettingsError('Impossible de charger les boutiques. Vérifiez votre connexion.'); });
     return () => { active = false; };
   }, [app]));
   useEffect(() => {
