@@ -10,9 +10,11 @@ export const expoLocationGateway: LocationGateway = {
     if (!await Location.hasServicesEnabledAsync()) return { status: 'disabled' };
     let timeout: ReturnType<typeof setTimeout> | undefined;
     try {
-      const location = await Promise.race([
+      // A recent fix is instant and good enough for a trip estimate; a fresh GPS fix can take long indoors.
+      const recent = await Location.getLastKnownPositionAsync({ maxAge: 120_000, requiredAccuracy: 500 }).catch(() => null);
+      const location = recent ?? await Promise.race([
         Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
-        new Promise<never>((_, reject) => { timeout = setTimeout(() => reject(new Error('Location timeout')), 20_000); }),
+        new Promise<never>((_, reject) => { timeout = setTimeout(() => reject(new Error('Location timeout')), 12_000); }),
       ]);
       return {
         status: 'ready', location: {

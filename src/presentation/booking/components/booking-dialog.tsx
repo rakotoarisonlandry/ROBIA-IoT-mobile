@@ -60,11 +60,17 @@ export function BookingDialog({ model, wide }: { model: BookingWorkflow; wide: b
   const [submitting, setSubmitting] = useState(false);
   const { modal, setModal, step, name, cin, phone, validate, setStep, services, setSelected, selected, shops, bookableShops, setShop, shop, setError, dates, setDay, day, appointmentTimes, setTime, time, confirm, ticket, busy, pdf, error } = model;
   const { checkTravel, cancelTravelCheck } = model;
+  // The shop list is refreshed in the background (live events, polling), which
+  // recreates checkTravel. Restart the trip check only when the shop itself
+  // changes, never on a refresh, or it is cancelled before it can finish.
+  const travelActions = useRef({ checkTravel, cancelTravelCheck });
+  useEffect(() => { travelActions.current = { checkTravel, cancelTravelCheck }; });
+  const shopId = shops[shop]?.id;
   useEffect(() => {
-    if (!modal || step !== 2 || guideActive) return;
-    void checkTravel();
-    return cancelTravelCheck;
-  }, [modal, step, guideActive, shop, checkTravel, cancelTravelCheck]);
+    if (!modal || step !== 2 || guideActive || !shopId) return;
+    void travelActions.current.checkTravel();
+    return () => travelActions.current.cancelTravelCheck();
+  }, [modal, step, guideActive, shopId]);
   useEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
   }, [step]);
