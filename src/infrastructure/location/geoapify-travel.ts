@@ -5,7 +5,7 @@ export async function estimateDrivingTime(from: Coordinates, to: Coordinates): P
   if (!key || !isValidCoordinates(from) || !isValidCoordinates(to)) throw new Error('Travel unavailable');
   const params = new URLSearchParams({ waypoints: `${from.latitude},${from.longitude}|${to.latitude},${to.longitude}`, mode: 'drive', apiKey: key });
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
+  const timeout = setTimeout(() => controller.abort(), 10000);
   try {
     const response = await fetch(`https://api.geoapify.com/v1/routing?${params}`, { signal: controller.signal });
     if (!response.ok) throw new Error('Travel unavailable');
